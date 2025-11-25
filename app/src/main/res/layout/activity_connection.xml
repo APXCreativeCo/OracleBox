@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/layout_connection_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/wood_bg"
+    android:backgroundTint="#784A38"
+    android:backgroundTintMode="multiply"
+    android:orientation="vertical"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="16dp"
+    android:paddingTop="32dp">
+
+    <TextView
+        android:id="@+id/text_title_control_bar2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bakelite_button"
+        android:text="OracleBox Connect"
+        android:textColor="@color/gothic_gold"
+        android:textSize="20sp"
+        android:textStyle="bold" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="22dp" />
+
+    <ImageView
+        android:id="@+id/image_logo4"
+        android:layout_width="72dp"
+        android:layout_height="72dp"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="16dp"
+        android:foreground="@mipmap/sqlogo_foreground"
+        android:scaleX="2"
+        android:scaleY="2" />
+
+    <TextView
+        android:id="@+id/text_title_control3"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:text="OracleBox"
+        android:textColor="#D7B972"
+        android:textSize="18sp"
+        android:textStyle="bold" />
+
+    <ProgressBar
+        android:id="@+id/progress_connecting"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="4dp"
+        android:visibility="gone" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="11dp" />
+
+    <TextView
+        android:id="@+id/text_status"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:background="@drawable/bg_dsilver_bubble"
+        android:text="Not connected" />
+
+    <Button
+        android:id="@+id/button_scan"
+        style="@style/OracleBox.BakeliteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:backgroundTintMode="multiply"
+        android:text="Scan / Refresh Paired Devices" />
+
+    <Space
+        android:layout_width="417dp"
+        android:layout_height="22dp" />
+
+    <TextView
+        android:id="@+id/text_devices_label"
+        android:layout_width="415dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:background="@drawable/bg_gothic_bubble"
+        android:text="Paired Devices"
+        android:textColor="@color/ghost_on_surface" />
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="10dp" />
+
+    <ListView
+        android:id="@+id/list_devices"
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:background="@drawable/bg_dsilver_bubble"
+        android:dividerHeight="1dp" />
+
+    <Button
+        android:id="@+id/button_open_controls"
+        style="@style/OracleBox.BakeliteButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
+        android:layout_marginTop="8dp"
+        android:text="Open Controls" />
+
+</LinearLayout>

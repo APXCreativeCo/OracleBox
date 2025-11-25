@@ -1,0 +1,56 @@
+<resources xmlns:tools="http://schemas.android.com/tools">
+    <!-- Base application theme: dark, gothic ghost-box -->
+    <style name="Theme.OracleBox" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary surface colors -->
+        <item name="colorPrimary">@color/ghost_surface</item>
+        <item name="colorPrimaryVariant">@color/ghost_background_alt</item>
+        <item name="colorOnPrimary">@color/ghost_on_surface</item>
+
+        <!-- Accent / highlights (brass) -->
+        <item name="colorSecondary">@color/gothic_gold</item>
+        <item name="colorSecondaryVariant">@color/gothic_gold_soft</item>
+        <item name="colorOnSecondary">@color/ghost_background</item>
+
+        <!-- Backgrounds -->
+        <item name="android:windowBackground">@color/ghost_background</item>
+        <item name="colorBackground">@color/ghost_background</item>
+
+        <!-- Bars: make status bar transparent so wood background shows through -->
+        <item name="android:statusBarColor">@android:color/transparent</item>
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:navigationBarColor">@color/ghost_background</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <!-- Ensure Material buttons do not apply pink tints over custom backgrounds -->
+        <item name="materialButtonStyle">@style/OracleBox.MaterialButton</item>
+
+        <!-- Also force platform Button to have no tint -->
+        <item name="android:buttonStyle">@style/OracleBox.PlatformButton</item>
+    </style>
+
+    <style name="OracleBox.MaterialButton" parent="Widget.MaterialComponents.Button">
+        <item name="android:backgroundTint">@null</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="OracleBox.PlatformButton" parent="@android:style/Widget.Button">
+        <item name="android:backgroundTint">@null</item>
+        <item name="android:tint">@null</item>
+    </style>
+
+    <!-- Dedicated bakelite radio-style button used in layouts -->
+    <style name="OracleBox.BakeliteButton" parent="@android:style/Widget.Button">
+        <item name="android:background">@drawable/bg_bakelite_button</item>
+        <item name="android:backgroundTint">@null</item>
+        <item name="backgroundTint">@null</item>
+        <item name="android:textColor">@color/ghost_on_surface</item>
+        <item name="android:textAllCaps">false</item>
+    </style>
+
+    <style name="Theme.OracleBox.NoActionBar" parent="Theme.OracleBox" />
+
+    <style name="Theme.OracleBox.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
+
+    <style name="Theme.OracleBox.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
+</resources>

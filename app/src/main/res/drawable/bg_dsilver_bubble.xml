@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android"
+    android:shape="rectangle">
+
+    <!-- Dirty / tarnished silver gradient -->
+    <gradient
+        android:startColor="#D0D0D0"
+        android:centerColor="#A0A0A0"
+        android:endColor="#6E6E6E"
+        android:angle="90" />
+
+    <corners android:radius="12dp" />
+
+    <stroke
+        android:width="1dp"
+        android:color="@color/gothic_gold_soft" />
+
+    <padding
+        android:left="12dp"
+        android:top="6dp"
+        android:right="12dp"
+        android:bottom="6dp" />
+</shape>

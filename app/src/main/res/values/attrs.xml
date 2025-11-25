@@ -1,0 +1,8 @@
+<resources>
+    <!-- Theme attribute so ?attr/colorBackground resolves in all styles -->
+    <attr name="colorBackground" format="color" />
+
+    <!-- Optional: explicit LED color semantics matching hardware -->
+    <attr name="oracleBoxSweepColor" format="color" />
+    <attr name="oracleBoxBoxColor" format="color" />
+</resources>

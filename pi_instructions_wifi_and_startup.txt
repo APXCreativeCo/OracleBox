@@ -1,0 +1,134 @@
+You are modifying and extending a Raspberry Pi project for an "OracleBox" ghost box controller. The Pi runs `oraclebox.py`, which handles Bluetooth control, FM sweep, LED modes, and sounds. There is also a new plan to use Wi‑Fi for uploading sound files instead of Bluetooth. Below are the requirements and current behavior you should implement/maintain.
+
+=== 1. Existing oraclebox.py Behavior (Bluetooth control + sweep) ===
+
+- The script `oraclebox.py`:
+  - Defines `BASE_DIR = ~/oraclebox` and `SOUNDS_DIR = ~/oraclebox/sounds`.
+  - Manages a TEA5767 FM radio (`set_freq`) and sweep logic in `sweep_thread()`.
+  - Uses `OracleBoxState` to track:
+    - `speed_index` / `speed_ms`
+    - `direction` (up/down)
+    - `running` (whether sweep is active)
+    - `sweep_led_mode`, `box_led_mode`
+    - `startup_sound` (filename of the configured startup sound)
+  - Exposes a command API via Bluetooth (classic RFCOMM) for commands like `STATUS`, `SPEED`, `FASTER`, `SLOWER`, `DIR`, `START`, `STOP`, `LED`, `SWEEP_CFG`, `BOX_CFG`, `SOUND LIST/PLAY/SET`, etc.
+  - Implements a Bluetooth server (`bluetooth_server()`) that listens on RFCOMM channel 1, parses line-based commands, and calls `handle_command(line)`.
+  - Has special handling for `UPLOAD_SOUND` over Bluetooth, but we are moving away from that and will rely on Wi‑Fi instead.
+
+- Startup sound configuration:
+  - `OracleBoxState.startup_sound` holds a filename, e.g. `startup.wav`.
+  - The command `SOUND SET <filename>` updates `startup_sound` and persists it in `config.json`.
+  - `SOUNDS_DIR` is where all `.wav` files are stored.
+
+=== 2. Desired power-on behavior (startup sound gating sweep/FM) ===
+
+We want the Pi to play a startup sound on power-on IF AND ONLY IF a valid startup sound is configured, and delay powering the FM sweep until after that sound (plus a small timeout) to avoid FM noise overlapping the intro sound.
+
+Requirements:
+
+1. At process start (in the `if __name__ == "__main__":` section):
+   - Read the current state and log it.
+   - Determine the full path of the startup sound:
+     - Take `state.startup_sound` under `SOUNDS_DIR`.
+     - Only consider it valid if the filename is non-empty and the file actually exists.
+
+2. If a valid startup sound is configured:
+   - Print a log like: `"Startup sound selected, playing before sweep: <filename>"`.
+   - Use `subprocess.Popen(["aplay", "-q", startup_path])` and `wait(timeout=10.0)` so it doesnt block forever.
+   - On `TimeoutExpired`, log a message and terminate the process.
+   - After the sound (or timeout), sleep an additional 1 second before starting the sweep.
+
+3. If no valid startup sound is configured or the file is missing:
+   - Print `"No valid startup sound configured; starting sweep immediately"` and go straight to starting the sweep.
+
+4. Only after this gating logic should the sweep/FM be started:
+   - Start the sweep thread: `threading.Thread(target=sweep_thread, daemon=True).start()`.
+   - Then start the Bluetooth server: `bluetooth_server()`.
+
+In other words, FM/sweep should be completely quiet until the startup sound (if configured) finishes and a 1 second grace period passes.
+
+=== 3. Wi‑Fi upload server (replacing Bluetooth upload) ===
+
+We want to stop relying on Bluetooth for file uploads and instead use Wi‑Fi: an HTTP server running on the Pi, combined with the Android app making HTTP POST requests. You are responsible for the Pi side server.
+
+Requirements for the Wi‑Fi upload server:
+
+1. Implement a small HTTP server in a new file, e.g. `oraclebox_upload_server.py`, in the same directory as `oraclebox.py`.
+
+2. Use Python with Flask (preferred) or another lightweight framework. The Flask-based reference implementation should:
+
+   - Set up directories:
+
+     ```python
+     BASE_DIR = os.path.expanduser("~/oraclebox")
+     SOUNDS_DIR = os.path.join(BASE_DIR, "sounds")
+     ```
+
+   - Define an upload endpoint:
+
+     ```python
+     @app.route("/upload", methods=["POST"])
+     def upload():
+         if "file" not in request.files:
+             return jsonify({"ok": False, "error": "no file field"}), 400
+         f = request.files["file"]
+         if f.filename == "":
+             return jsonify({"ok": False, "error": "empty filename"}), 400
+
+         os.makedirs(SOUNDS_DIR, exist_ok=True)
+         path = os.path.join(SOUNDS_DIR, f.filename)
+         f.save(path)
+         print("Saved upload to", path)
+         return jsonify({"ok": True, "filename": f.filename})
+     ```
+
+   - Define a list endpoint so the app or browser can see what sounds exist:
+
+     ```python
+     @app.route("/sounds", methods=["GET"])
+     def list_sounds():
+         if not os.path.exists(SOUNDS_DIR):
+             return jsonify([])
+         files = sorted([n for n in os.listdir(SOUNDS_DIR) if n.lower().endswith(".wav")])
+         return jsonify(files)
+     ```
+
+   - Run the Flask app on all interfaces, port 5000:
+
+     ```python
+     if __name__ == "__main__":
+         os.makedirs(SOUNDS_DIR, exist_ok=True)
+         app.run(host="0.0.0.0", port=5000)
+     ```
+
+3. This server must save uploaded files into the SAME `SOUNDS_DIR` that `oraclebox.py` uses, so that:
+   - `SOUND LIST` (over Bluetooth from the Android app) automatically shows newly uploaded sounds.
+   - The configured startup sound (`state.startup_sound`) can be any file in that directory.
+
+4. Do not break or change the existing `oraclebox.py` Bluetooth control functionality. The Wi‑Fi upload server is additive:
+   - `oraclebox.py` continues to run and serve Bluetooth control.
+   - `oraclebox_upload_server.py` runs alongside it to expose upload/list over HTTP.
+
+=== 4. Network assumptions ===
+
+- The Pi will either:
+  - Be on the same Wi‑Fi network as the Android phone, OR
+  - Act as a Wi‑Fi access point (hotspot) so the phone can connect directly.
+- The Android app will send `POST /upload` requests to `http://<pi-ip>:5000/upload` with a `file` form field containing the WAV.
+- The Android app will still use Bluetooth for STATUS, LED modes, sweep control, and SOUND LIST/SET/PLAY.
+
+=== 5. Deliverables ===
+
+1. Confirm `oraclebox.py` main block behaves as described in section 2:
+   - Gated startup sound (if configured and file exists), 1s delay, then sweep + Bluetooth server.
+
+2. Implement `oraclebox_upload_server.py` as described in section 3:
+   - `/upload` endpoint saving files into `SOUNDS_DIR`.
+   - `/sounds` endpoint listing available `.wav` files.
+   - Run on `0.0.0.0:5000`.
+
+3. Provide any necessary notes/log messages that will help verify the behavior, e.g.:
+   - On upload: `Saved upload to <path>`
+   - On server start: `Upload server listening on 0.0.0.0:5000`
+
+Do not alter the Bluetooth upload handling further; the Android app will move away from using `UPLOAD_SOUND` over Bluetooth and will instead POST files over Wi‑Fi to the new server you implement.

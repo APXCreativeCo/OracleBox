@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="purple_200">#FFBB86FC</color>
+    <color name="purple_500">#FF6200EE</color>
+    <color name="purple_700">#FF3700B3</color>
+    <color name="teal_200">#FF03DAC5</color>
+    <color name="teal_700">#FF018786</color>
+    <color name="black">#FF000000</color>
+    <color name="white">#FFFFFFFF</color>
+
+    <!-- OracleBox gothic ghost-box palette -->
+    <color name="ghost_background">#050509</color>
+    <color name="ghost_background_alt">#090712</color>
+    <color name="ghost_surface">#11121C</color>
+    <color name="ghost_on_background">#E6E4F5</color>
+    <color name="ghost_on_surface">#F5F4FF</color>
+
+    <!-- Electronic / signal accent -->
+    <color name="ghost_accent">#7DF9FF</color>
+    <color name="ghost_accent_soft">#4CC1D0</color>
+
+    <!-- Gothic brass + wine tones -->
+    <color name="gothic_gold">#C9A45A</color>
+    <color name="gothic_gold_soft">#A7884A</color>
+    <color name="gothic_burgundy">#301320</color>
+    <color name="gothic_burgundy_dark">#1C0814</color>
+
+    <!-- Dividers / utility -->
+    <color name="ghost_warning">#FF5252</color>
+    <color name="ghost_divider">#252636</color>
+
+    <!-- Hardware LED hints -->
+    <color name="ghost_box_blue">#4CC1FF</color>
+    <color name="ghost_sweep_yellow">#FFD966</color>
+</resources>

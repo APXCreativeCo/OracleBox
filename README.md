@@ -20,11 +20,11 @@ Android app to control a Raspberry Pi-based OracleBox over classic Bluetooth SPP
 
 Persisted fields (written to `config.json`):
 
-- `speed_ms` – actual sweep delay derived from `speed_index`.
-- `direction` – `"up"` or `"down"`.
-- `running` – whether the sweep thread should be active.
-- `sweep_led_mode` / `box_led_mode` – LED animation presets (on/off/breath/breath_fast/heartbeat/strobe/flicker/random_burst/sweep).
-- `startup_sound` – filename of the boot sound or empty for none.
+- `speed_ms` - actual sweep delay derived from `speed_index`.
+- `direction` - `"up"` or `"down"`.
+- `running` - whether the sweep thread should be active.
+- `sweep_led_mode` / `box_led_mode` - LED animation presets (on/off/breath/breath_fast/heartbeat/strobe/flicker/random_burst/sweep).
+- `startup_sound` - filename of the boot sound or empty for none.
 
 ## Features
 
@@ -85,6 +85,6 @@ From the project root:
 
 ## Future Plans
 
-- Route audio through a USB interface for band-pass filtering (roughly 600–3500 Hz) and portal-style reverb/chorus.
+- Route audio through a USB interface for band-pass filtering (roughly 600-3500 Hz) and portal-style reverb/chorus.
 - Accept external sweep sources (e.g., SB7 headphone out) as input for processing.
 - Expand the Android UI with controls for effects stacks once the Pi pipeline is ready.

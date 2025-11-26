@@ -49,3 +49,22 @@ data class PingStatus(
     ,
     val muted: Boolean? = false
 )
+
+/**
+ * Bluetooth audio device info.
+ */
+data class BtAudioDevice(
+    val mac: String,
+    val name: String,
+    val connected: Boolean
+)
+
+/**
+ * Bluetooth audio status from BT_AUDIO STATUS command.
+ */
+data class BtAudioStatus(
+    val defaultDevice: String,
+    val btDevice: String?,
+    val btConnected: Boolean,
+    val currentDevice: String
+)

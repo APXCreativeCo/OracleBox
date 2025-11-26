@@ -1,0 +1,306 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@drawable/wood_bg"
+    android:backgroundTint="#784A38"
+    android:backgroundTintMode="multiply"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="16dp"
+    android:paddingTop="32dp">
+
+    <!-- Header with integrated back button -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bakelite_button"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="MUSIC BOX MODE"
+            android:textColor="@color/gothic_gold"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/button_back_to_modes_mb"
+            style="@style/OracleBox.BakeliteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="◀ BACK"
+            android:textSize="10sp"
+            android:backgroundTint="@null"
+            android:minHeight="0dp"
+            android:paddingVertical="4dp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical">
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <ImageView
+                android:id="@+id/image_logo_mb"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:foreground="@mipmap/sqlogo_foreground"
+                android:scaleX="2"
+                android:scaleY="2" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:text="OracleBox"
+                android:textColor="#D7B972"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <!-- Status Card -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_gothic_bubble"
+                android:text="Status"
+                android:textColor="@color/ghost_on_surface"
+                android:textStyle="bold" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_dsilver_bubble"
+                android:orientation="vertical"
+                android:padding="16dp">
+
+                <TextView
+                    android:id="@+id/text_musicbox_status"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="● STANDBY"
+                    android:textAlignment="center"
+                    android:textColor="@android:color/holo_orange_light"
+                    android:textSize="24sp"
+                    android:textStyle="bold" />
+
+                <TextView
+                    android:id="@+id/text_last_play"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="8dp"
+                    android:text="No recent plays"
+                    android:textAlignment="center"
+                    android:textColor="@color/ghost_surface"
+                    android:textSize="12sp" />
+            </LinearLayout>
+
+            <!-- Controls -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_gothic_bubble"
+                android:text="Controls"
+                android:textColor="@color/ghost_on_surface"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/button_musicbox_start"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@null"
+                android:text="START MUSIC BOX"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/button_musicbox_stop"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@null"
+                android:text="STOP"
+                android:textSize="14sp" />
+
+            <Button
+                android:id="@+id/button_play_now"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@null"
+                android:text="PLAY NOW (Manual)"
+                android:textSize="14sp" />
+
+            <!-- Sound Settings -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_gothic_bubble"
+                android:text="Music Box Sound"
+                android:textColor="@color/ghost_on_surface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_current_musicbox_sound"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_dsilver_bubble"
+                android:padding="12dp"
+                android:text="None selected"
+                android:textColor="@color/ghost_surface" />
+
+            <Spinner
+                android:id="@+id/spinner_musicbox_sounds"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_log_window" />
+
+            <Button
+                android:id="@+id/button_set_musicbox_sound"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@null"
+                android:text="SET AS MUSIC BOX SOUND"
+                android:textSize="12sp" />
+
+            <Button
+                android:id="@+id/button_test_musicbox_sound"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:backgroundTint="@null"
+                android:text="TEST SOUND"
+                android:textSize="12sp" />
+
+            <!-- Upload Sound -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_gothic_bubble"
+                android:text="Sound Library"
+                android:textColor="@color/ghost_on_surface"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/button_upload_musicbox_sound"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@null"
+                android:text="UPLOAD NEW SOUND"
+                android:textSize="12sp" />
+
+            <ProgressBar
+                android:id="@+id/progress_upload_mb"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:max="100"
+                android:progress="0"
+                android:visibility="gone" />
+
+            <Button
+                android:id="@+id/button_refresh_musicbox_sounds"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:backgroundTint="@null"
+                android:text="REFRESH SOUND LIST"
+                android:textSize="10sp" />
+
+            <!-- Log -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_gothic_bubble"
+                android:text="Activity Log"
+                android:textColor="@color/ghost_on_surface"
+                android:textStyle="bold" />
+
+            <ScrollView
+                android:id="@+id/scroll_musicbox_logs"
+                android:layout_width="match_parent"
+                android:layout_height="150dp"
+                android:layout_marginTop="8dp"
+                android:scrollbars="vertical"
+                android:fillViewport="false">
+
+                <TextView
+                    android:id="@+id/text_musicbox_logs"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_log_window"
+                    android:padding="8dp"
+                    android:text="Waiting for activity..."
+                    android:textColor="@color/ghost_background"
+                    android:textSize="12sp"
+                    android:clickable="false"
+                    android:focusable="false" />
+            </ScrollView>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+        </LinearLayout>
+
+    </ScrollView>
+
+</LinearLayout>

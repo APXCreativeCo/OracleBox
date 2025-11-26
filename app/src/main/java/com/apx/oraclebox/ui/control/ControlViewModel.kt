@@ -59,6 +59,44 @@ class ControlViewModel(
     private val _pingStatus = MutableLiveData<PingStatus?>()
     val pingStatus: LiveData<PingStatus?> = _pingStatus
 
+    // FX State
+    data class FxUiState(
+        val enabled: Boolean = false,
+        val preset: String = "SB7_CLASSIC",
+        val bpLowHz: Int = 500,
+        val bpHighHz: Int = 2600,
+        val contrast: Int = 25,
+        val reverbLevel: Int = 35,
+        val gainDb: Int = 0,
+        val loading: Boolean = false,
+        val error: String? = null
+    )
+
+    private val _fxUiState = MutableLiveData(FxUiState())
+    val fxUiState: LiveData<FxUiState> = _fxUiState
+    
+    // FX Preset State
+    data class FxPreset(
+        val name: String,
+        val category: String,
+        val description: String
+    )
+    
+    private val _fxPresets = MutableLiveData<List<FxPreset>>(emptyList())
+    val fxPresets: LiveData<List<FxPreset>> = _fxPresets
+
+    // Mixer State
+    data class MixerUiState(
+        val speakerVolume: Int = 14,  // 0–37
+        val micVolume: Int = 20,      // 0–35
+        val autoGain: Boolean = false,
+        val loading: Boolean = false,
+        val error: String? = null
+    )
+
+    private val _mixerUiState = MutableLiveData(MixerUiState())
+    val mixerUiState: LiveData<MixerUiState> = _mixerUiState
+
     init {
         connectIfNeeded()
     }
@@ -100,11 +138,45 @@ class ControlViewModel(
     fun dirDown() = sendSimple { it.setDirectionDown() }
     fun dirToggle() = sendSimple { it.toggleDirection() }
 
-    fun setSpeed(ms: Int) = sendAndRefreshStatus { it.setSpeed(ms) }
+    fun setSpeed(ms: Int) {
+        // Optimistically update UI immediately
+        val currentStatus = _status.value
+        if (currentStatus != null) {
+            val speedOptions = listOf(50, 100, 150, 200, 250, 300, 350)
+            // Find closest valid speed
+            val closestSpeed = speedOptions.minByOrNull { kotlin.math.abs(it - ms) } ?: ms
+            _status.value = currentStatus.copy(speedMs = closestSpeed)
+        }
+        sendAndRefreshStatus { it.setSpeed(ms) }
+    }
 
-    fun faster() = sendAndRefreshStatus { it.faster() }
+    fun faster() {
+        // Optimistically update UI immediately
+        val currentStatus = _status.value
+        if (currentStatus != null) {
+            val speedOptions = listOf(50, 100, 150, 200, 250, 300, 350)
+            val currentIndex = speedOptions.indexOf(currentStatus.speedMs)
+            if (currentIndex > 0) {
+                val newSpeed = speedOptions[currentIndex - 1]
+                _status.value = currentStatus.copy(speedMs = newSpeed)
+            }
+        }
+        sendAndRefreshStatus { it.faster() }
+    }
 
-    fun slower() = sendAndRefreshStatus { it.slower() }
+    fun slower() {
+        // Optimistically update UI immediately
+        val currentStatus = _status.value
+        if (currentStatus != null) {
+            val speedOptions = listOf(50, 100, 150, 200, 250, 300, 350)
+            val currentIndex = speedOptions.indexOf(currentStatus.speedMs)
+            if (currentIndex >= 0 && currentIndex < speedOptions.size - 1) {
+                val newSpeed = speedOptions[currentIndex + 1]
+                _status.value = currentStatus.copy(speedMs = newSpeed)
+            }
+        }
+        sendAndRefreshStatus { it.slower() }
+    }
 
     fun setSweepLedMode(mode: String) = sendAndRefreshStatus { it.setSweepLedMode(mode) }
 
@@ -325,6 +397,528 @@ class ControlViewModel(
                 _errorMessage.value = e.message
                 _disconnected.value = true
             } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    // -------------------- FX Methods --------------------
+
+    fun loadFxStatus() {
+        val localRepo = repo ?: return
+        viewModelScope.launch {
+            _fxUiState.value = _fxUiState.value?.copy(loading = true, error = null)
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.fxStatus()
+                }
+                if (response.isOk) {
+                    val payload = response.raw.removePrefix("OK FX STATUS").trim()
+                    val json = org.json.JSONObject(payload)
+                    _fxUiState.value = FxUiState(
+                        enabled = json.optBoolean("enabled", false),
+                        preset = json.optString("preset", "SB7_CLASSIC"),
+                        bpLowHz = json.optInt("bp_low", 500),
+                        bpHighHz = json.optInt("bp_high", 2600),
+                        contrast = json.optInt("contrast_amount", 25),
+                        reverbLevel = json.optInt("reverb_room", 35),
+                        gainDb = json.optInt("post_gain_db", 0),
+                        loading = false,
+                        error = null
+                    )
+                } else {
+                    _fxUiState.value = _fxUiState.value?.copy(
+                        loading = false,
+                        error = "Failed to load FX status"
+                    )
+                }
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(
+                    loading = false,
+                    error = e.message
+                )
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun setFxEnabled(enabled: Boolean) {
+        val localRepo = repo ?: return
+        
+        // Immediately update UI state to prevent toggle from sliding back
+        _fxUiState.value = _fxUiState.value?.copy(enabled = enabled, loading = true, error = null)
+        
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    if (enabled) localRepo.fxEnable() else localRepo.fxDisable()
+                }
+                if (response.isOk) {
+                    // Refresh full status to sync all parameters
+                    loadFxStatus()
+                } else {
+                    // Revert enabled state on failure
+                    _fxUiState.value = _fxUiState.value?.copy(
+                        enabled = !enabled,
+                        loading = false,
+                        error = "Failed to ${if (enabled) "enable" else "disable"} FX"
+                    )
+                }
+            } catch (e: Exception) {
+                // Revert enabled state on error
+                _fxUiState.value = _fxUiState.value?.copy(
+                    enabled = !enabled,
+                    loading = false,
+                    error = e.message
+                )
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun updateBandpass(lowHz: Int, highHz: Int) {
+        val localRepo = repo ?: run {
+            _fxUiState.value = _fxUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    localRepo.fxSet("BP_LOW", lowHz)
+                    localRepo.fxSet("BP_HIGH", highHz)
+                }
+                _fxUiState.value = _fxUiState.value?.copy(
+                    bpLowHz = lowHz,
+                    bpHighHz = highHz,
+                    preset = "CUSTOM",
+                    error = null
+                )
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(error = "BP: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun updateContrast(value: Int) {
+        val localRepo = repo ?: run {
+            _fxUiState.value = _fxUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    localRepo.fxSet("CONTRAST", value)
+                }
+                _fxUiState.value = _fxUiState.value?.copy(
+                    contrast = value,
+                    preset = "CUSTOM",
+                    error = null
+                )
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(error = "Contrast: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun updateReverb(value: Int) {
+        val localRepo = repo ?: run {
+            _fxUiState.value = _fxUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    localRepo.fxSet("REVERB", value)
+                }
+                _fxUiState.value = _fxUiState.value?.copy(
+                    reverbLevel = value,
+                    preset = "CUSTOM",
+                    error = null
+                )
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(error = "Reverb: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun updateGain(value: Int) {
+        val localRepo = repo ?: run {
+            _fxUiState.value = _fxUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                withContext(Dispatchers.IO) {
+                    localRepo.fxSet("POST_GAIN", value)
+                }
+                _fxUiState.value = _fxUiState.value?.copy(
+                    gainDb = value,
+                    preset = "CUSTOM",
+                    error = null
+                )
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(error = "Gain: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    // -------------------- FX Preset Methods --------------------
+
+    fun loadFxPresets() {
+        val localRepo = repo ?: return
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.fxPresetList()
+                }
+                if (response.isOk) {
+                    val payload = response.raw.removePrefix("OK FX PRESET LIST").trim()
+                    val jsonArray = org.json.JSONArray(payload)
+                    val presets = mutableListOf<FxPreset>()
+                    for (i in 0 until jsonArray.length()) {
+                        val obj = jsonArray.getJSONObject(i)
+                        presets.add(
+                            FxPreset(
+                                name = obj.getString("name"),
+                                category = obj.getString("category"),
+                                description = obj.getString("description")
+                            )
+                        )
+                    }
+                    _fxPresets.value = presets
+                }
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(error = "Failed to load presets: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun applyFxPreset(presetName: String) {
+        val localRepo = repo ?: run {
+            _fxUiState.value = _fxUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        
+        // Immediately update preset name in UI for instant feedback
+        _fxUiState.value = _fxUiState.value?.copy(preset = presetName, loading = true, error = null)
+        
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.fxPresetSet(presetName)
+                }
+                if (response.isOk) {
+                    // Reload FX status to get all new parameter values from backend
+                    loadFxStatus()
+                } else {
+                    _fxUiState.value = _fxUiState.value?.copy(
+                        loading = false,
+                        error = "Failed to apply preset $presetName"
+                    )
+                }
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(
+                    loading = false,
+                    error = "Preset error: ${e.message}"
+                )
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun saveCustomPreset(presetName: String, category: String) {
+        val localRepo = repo ?: run {
+            _fxUiState.value = _fxUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        
+        viewModelScope.launch {
+            _fxUiState.value = _fxUiState.value?.copy(loading = true, error = null)
+            try {
+                val currentFx = _fxUiState.value ?: return@launch
+                
+                // Send command to save preset with current values
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand(
+                        "FX PRESET SAVE $presetName $category " +
+                        "${currentFx.bpLowHz} ${currentFx.bpHighHz} " +
+                        "${currentFx.contrast} ${currentFx.reverbLevel} ${currentFx.gainDb}"
+                    )
+                }
+                
+                if (response.isOk) {
+                    // Reload presets list to include the new one
+                    loadFxPresets()
+                    _fxUiState.value = _fxUiState.value?.copy(
+                        preset = presetName,
+                        loading = false,
+                        error = null
+                    )
+                } else {
+                    _fxUiState.value = _fxUiState.value?.copy(
+                        loading = false,
+                        error = "Failed to save preset"
+                    )
+                }
+            } catch (e: Exception) {
+                _fxUiState.value = _fxUiState.value?.copy(
+                    loading = false,
+                    error = "Save error: ${e.message}"
+                )
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    // -------------------- Mixer Methods --------------------
+
+    fun loadMixerStatus() {
+        val localRepo = repo ?: return
+        viewModelScope.launch {
+            _mixerUiState.value = _mixerUiState.value?.copy(loading = true, error = null)
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.mixerStatus()
+                }
+                if (response.isOk) {
+                    val payload = response.raw.removePrefix("OK MIXER STATUS").trim()
+                    val json = org.json.JSONObject(payload)
+                    _mixerUiState.value = MixerUiState(
+                        speakerVolume = json.optInt("speaker_volume", 14),
+                        micVolume = json.optInt("mic_capture_volume", 20),
+                        autoGain = json.optBoolean("auto_gain", false),
+                        loading = false,
+                        error = null
+                    )
+                } else {
+                    _mixerUiState.value = _mixerUiState.value?.copy(
+                        loading = false,
+                        error = "Failed to load mixer status"
+                    )
+                }
+            } catch (e: Exception) {
+                _mixerUiState.value = _mixerUiState.value?.copy(
+                    loading = false,
+                    error = e.message
+                )
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun setSpeakerVolume(level: Int) {
+        val localRepo = repo ?: run {
+            _mixerUiState.value = _mixerUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        val clamped = level.coerceIn(0, 37)
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.setSpeakerVolume(clamped)
+                }
+                if (response.isOk) {
+                    _mixerUiState.value = _mixerUiState.value?.copy(speakerVolume = clamped, error = null)
+                } else {
+                    _mixerUiState.value = _mixerUiState.value?.copy(error = "Failed to set speaker volume")
+                }
+            } catch (e: Exception) {
+                _mixerUiState.value = _mixerUiState.value?.copy(error = "Speaker: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun setMicVolume(level: Int) {
+        val localRepo = repo ?: run {
+            _mixerUiState.value = _mixerUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        val clamped = level.coerceIn(0, 35)
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.setMicVolume(clamped)
+                }
+                if (response.isOk) {
+                    _mixerUiState.value = _mixerUiState.value?.copy(micVolume = clamped, error = null)
+                } else {
+                    _mixerUiState.value = _mixerUiState.value?.copy(error = "Failed to set mic volume")
+                }
+            } catch (e: Exception) {
+                _mixerUiState.value = _mixerUiState.value?.copy(error = "Mic: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    fun setAutoGain(enabled: Boolean) {
+        val localRepo = repo ?: run {
+            _mixerUiState.value = _mixerUiState.value?.copy(error = "Bluetooth not connected")
+            return
+        }
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.setAutoGain(enabled)
+                }
+                if (response.isOk) {
+                    _mixerUiState.value = _mixerUiState.value?.copy(autoGain = enabled, error = null)
+                } else {
+                    _mixerUiState.value = _mixerUiState.value?.copy(error = "Failed to set auto gain")
+                }
+            } catch (e: Exception) {
+                _mixerUiState.value = _mixerUiState.value?.copy(error = "AutoGain: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+
+    // ==================== BLUETOOTH AUDIO ====================
+    
+    private val _btAudioDevices = MutableLiveData<List<com.apx.oraclebox.data.BtAudioDevice>>(emptyList())
+    val btAudioDevices: LiveData<List<com.apx.oraclebox.data.BtAudioDevice>> = _btAudioDevices
+    
+    private val _btAudioStatus = MutableLiveData<com.apx.oraclebox.data.BtAudioStatus?>()
+    val btAudioStatus: LiveData<com.apx.oraclebox.data.BtAudioStatus?> = _btAudioStatus
+    
+    private val _btAudioLoading = MutableLiveData(false)
+    val btAudioLoading: LiveData<Boolean> = _btAudioLoading
+    
+    fun refreshBtAudioDevices() {
+        val localRepo = repo ?: return
+        _btAudioLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO LIST")
+                }
+                if (response.isOk) {
+                    val json = org.json.JSONObject(response.raw.substringAfter("OK BT_AUDIO LIST "))
+                    val devicesArray = json.optJSONArray("devices")
+                    val devices = mutableListOf<com.apx.oraclebox.data.BtAudioDevice>()
+                    if (devicesArray != null) {
+                        for (i in 0 until devicesArray.length()) {
+                            val dev = devicesArray.getJSONObject(i)
+                            devices.add(
+                                com.apx.oraclebox.data.BtAudioDevice(
+                                    mac = dev.getString("mac"),
+                                    name = dev.getString("name"),
+                                    connected = dev.getBoolean("connected")
+                                )
+                            )
+                        }
+                    }
+                    _btAudioDevices.value = devices
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO LIST error: ${e.message}")
+            } finally {
+                _btAudioLoading.value = false
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun refreshBtAudioStatus() {
+        val localRepo = repo ?: return
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO STATUS")
+                }
+                if (response.isOk) {
+                    val json = org.json.JSONObject(response.raw.substringAfter("OK BT_AUDIO STATUS "))
+                    _btAudioStatus.value = com.apx.oraclebox.data.BtAudioStatus(
+                        defaultDevice = json.getString("default_device"),
+                        btDevice = json.optString("bt_device", null),
+                        btConnected = json.getBoolean("bt_connected"),
+                        currentDevice = json.getString("current_device")
+                    )
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO STATUS error: ${e.message}")
+            } finally {
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun connectBtAudio(macAddress: String) {
+        val localRepo = repo ?: return
+        _btAudioLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO CONNECT $macAddress")
+                }
+                if (response.isOk) {
+                    refreshBtAudioStatus()
+                    refreshBtAudioDevices()
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO CONNECT error: ${e.message}")
+            } finally {
+                _btAudioLoading.value = false
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun disconnectBtAudio() {
+        val localRepo = repo ?: return
+        _btAudioLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO DISCONNECT")
+                }
+                if (response.isOk) {
+                    refreshBtAudioStatus()
+                    refreshBtAudioDevices()
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO DISCONNECT error: ${e.message}")
+            } finally {
+                _btAudioLoading.value = false
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun streamToPhone() {
+        val localRepo = repo ?: return
+        _btAudioLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO STREAM_PHONE")
+                }
+                if (response.isOk) {
+                    refreshBtAudioStatus()
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO STREAM_PHONE error: ${e.message}")
+            } finally {
+                _btAudioLoading.value = false
                 refreshLogs()
             }
         }

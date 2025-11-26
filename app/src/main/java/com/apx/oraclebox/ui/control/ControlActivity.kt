@@ -37,14 +37,8 @@ class ControlActivity : AppCompatActivity() {
     private lateinit var spinnerBoxLed: Spinner
 
     private lateinit var buttonRefreshStatus: Button
-    private lateinit var buttonRefreshSounds: Button
-    private lateinit var buttonUploadSound: Button
-    private lateinit var spinnerSounds: Spinner
-    private lateinit var buttonPlaySound: Button
-    private lateinit var buttonSetStartup: Button
-    private lateinit var buttonSetRempod: Button
-    private lateinit var buttonSetMusicbox: Button
-    private lateinit var buttonDeviceSettings: Button
+    private lateinit var buttonStartSpiritBox: Button
+    private lateinit var buttonBackToModes: Button
 
     private lateinit var seekSweepMin: SeekBar
     private lateinit var seekSweepMax: SeekBar
@@ -56,8 +50,23 @@ class ControlActivity : AppCompatActivity() {
     private lateinit var buttonApplyBoxCfg: Button
 
     private lateinit var textLogs: TextView
+    private lateinit var scrollLogs: ScrollView
     private lateinit var labelDisconnected: TextView
-    private lateinit var progressUpload: ProgressBar
+
+    // FX & Mixer controls
+    private lateinit var switchFxEnabled: Switch
+    private lateinit var textCurrentPreset: TextView
+    private lateinit var buttonModeFM: Button
+    private lateinit var buttonModeSB7: Button
+    private lateinit var buttonSavePreset: Button
+    private var currentMode: String = "FM" // FM or SB7
+    private lateinit var sliderBpLow: SeekBar
+    private lateinit var sliderBpHigh: SeekBar
+    private lateinit var sliderContrast: SeekBar
+    private lateinit var sliderReverb: SeekBar
+    private lateinit var sliderGain: SeekBar
+    private lateinit var sliderSpeakerVolume: SeekBar
+    private lateinit var sliderMicVolume: SeekBar
 
     private val speedOptions = listOf(50, 100, 150, 200, 250, 300, 350)
     private val ledModes = listOf(
@@ -73,6 +82,10 @@ class ControlActivity : AppCompatActivity() {
     )
 
     private var isMuted: Boolean = false
+    
+    // Flags to prevent listener loops when updating UI programmatically
+    private var isUpdatingFxUi = false
+    private var isUpdatingMixerUi = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -111,15 +124,11 @@ class ControlActivity : AppCompatActivity() {
         spinnerBoxLed = findViewById(R.id.spinner_box_led)
 
         buttonRefreshStatus = findViewById(R.id.button_refresh_status)
-        buttonRefreshSounds = findViewById(R.id.button_refresh_sounds)
-        buttonUploadSound = findViewById(R.id.button_upload_sound)
-        spinnerSounds = findViewById(R.id.spinner_sounds)
-        buttonPlaySound = findViewById(R.id.button_play_sound)
-        buttonSetStartup = findViewById(R.id.button_set_startup)
+        buttonStartSpiritBox = findViewById(R.id.button_start_spirit_box)
+        buttonBackToModes = findViewById(R.id.button_back_to_modes_sb)
 
-        buttonSetRempod = findViewById(R.id.button_set_rempod)
-        buttonSetMusicbox = findViewById(R.id.button_set_musicbox)
-        buttonDeviceSettings = findViewById(R.id.button_device_settings)
+        // Initially hide sweep controls until START SPIRIT BOX is pressed
+        hideSweepControls()
 
         seekSweepMin = findViewById(R.id.seek_sweep_min)
         seekSweepMax = findViewById(R.id.seek_sweep_max)
@@ -131,8 +140,22 @@ class ControlActivity : AppCompatActivity() {
         buttonApplyBoxCfg = findViewById(R.id.button_apply_box_cfg)
 
         textLogs = findViewById(R.id.text_logs)
+        scrollLogs = findViewById(R.id.scroll_logs)
         labelDisconnected = findViewById(R.id.label_disconnected)
-        progressUpload = findViewById(R.id.progress_upload)
+
+        // FX & Mixer controls
+        switchFxEnabled = findViewById(R.id.switch_fx_enabled)
+        textCurrentPreset = findViewById(R.id.text_current_preset)
+        buttonModeFM = findViewById(R.id.button_mode_fm)
+        buttonModeSB7 = findViewById(R.id.button_mode_sb7)
+        buttonSavePreset = findViewById(R.id.button_save_preset)
+        sliderBpLow = findViewById(R.id.slider_bp_low)
+        sliderBpHigh = findViewById(R.id.slider_bp_high)
+        sliderContrast = findViewById(R.id.slider_contrast)
+        sliderReverb = findViewById(R.id.slider_reverb)
+        sliderGain = findViewById(R.id.slider_gain)
+        sliderSpeakerVolume = findViewById(R.id.slider_speaker_volume)
+        sliderMicVolume = findViewById(R.id.slider_mic_volume)
     }
 
     private fun setupSpinners() {
@@ -164,8 +187,6 @@ class ControlActivity : AppCompatActivity() {
             textSpeed.text = "${status.speedMs} ms"
             textSweepLed.text = status.sweepLedMode
             textBoxLed.text = status.boxLedMode
-            findViewById<TextView>(R.id.text_startup_sound).text =
-                if (status.startupSound.isBlank()) "None" else status.startupSound
 
             val speedIndex = speedOptions.indexOf(status.speedMs)
             if (speedIndex >= 0) spinnerSpeed.setSelection(speedIndex)
@@ -201,6 +222,11 @@ class ControlActivity : AppCompatActivity() {
                 builder.append(prefix).append(entry.text).append("\n")
             }
             textLogs.text = builder.toString()
+            
+            // Auto-scroll to bottom to show newest logs
+            scrollLogs.post {
+                scrollLogs.fullScroll(ScrollView.FOCUS_DOWN)
+            }
         }
 
         viewModel.uploadInProgress.observe(this) { inProgress ->
@@ -220,6 +246,62 @@ class ControlActivity : AppCompatActivity() {
         viewModel.disconnected.observe(this) { d ->
             labelDisconnected.visibility = if (d == true) android.view.View.VISIBLE else android.view.View.GONE
         }
+
+        // FX State Observer
+        viewModel.fxUiState.observe(this) { state ->
+            isUpdatingFxUi = true
+            
+            switchFxEnabled.isChecked = state.enabled
+            textCurrentPreset.text = state.preset
+            sliderBpLow.progress = (state.bpLowHz - 200).coerceIn(0, 800)
+            sliderBpHigh.progress = (state.bpHighHz - 2000).coerceIn(0, 2000)
+            sliderContrast.progress = state.contrast.coerceIn(0, 50)
+            sliderReverb.progress = state.reverbLevel.coerceIn(0, 60)
+            sliderGain.progress = (state.gainDb + 12).coerceIn(0, 24)
+            
+            // Disable FX sliders when FX is off (passthrough mode)
+            sliderBpLow.isEnabled = state.enabled
+            sliderBpHigh.isEnabled = state.enabled
+            sliderContrast.isEnabled = state.enabled
+            sliderReverb.isEnabled = state.enabled
+            sliderGain.isEnabled = state.enabled
+            buttonSavePreset.isEnabled = state.enabled && state.preset == "CUSTOM"
+            
+            // Highlight CUSTOM preset in different color
+            if (state.preset == "CUSTOM") {
+                textCurrentPreset.setTextColor(getColor(android.R.color.holo_orange_light))
+            } else {
+                textCurrentPreset.setTextColor(getColor(R.color.ghost_accent))
+            }
+            
+            if (!state.error.isNullOrEmpty()) {
+                Toast.makeText(this, "FX: ${state.error}", Toast.LENGTH_SHORT).show()
+            }
+            
+            isUpdatingFxUi = false
+        }
+
+        // Mixer State Observer
+        viewModel.mixerUiState.observe(this) { state ->
+            isUpdatingMixerUi = true
+            
+            sliderSpeakerVolume.progress = state.speakerVolume.coerceIn(0, 37)
+            sliderMicVolume.progress = state.micVolume.coerceIn(0, 35)
+            
+            if (!state.error.isNullOrEmpty()) {
+                Toast.makeText(this, "Mixer: ${state.error}", Toast.LENGTH_SHORT).show()
+            }
+            
+            isUpdatingMixerUi = false
+        }
+
+        // Load initial FX and Mixer status
+        viewModel.loadFxStatus()
+        viewModel.loadMixerStatus()
+        viewModel.loadFxPresets()
+        
+        // Initialize mode buttons
+        updateModeButtons()
     }
 
     private fun setupButtons() {
@@ -276,28 +358,16 @@ class ControlActivity : AppCompatActivity() {
 
         buttonRefreshStatus.setOnClickListener { viewModel.refreshStatus() }
 
-        buttonRefreshSounds.setOnClickListener { viewModel.refreshSounds() }
-
-        buttonUploadSound.setOnClickListener {
-            pickSoundLauncher.launch("audio/*")
+        buttonStartSpiritBox.setOnClickListener {
+            // Show sweep controls and start sweep
+            showSweepControls()
+            buttonStartSpiritBox.visibility = android.view.View.GONE
+            viewModel.start()
         }
 
-        buttonPlaySound.setOnClickListener {
-            val selected = spinnerSounds.selectedItem as? String
-            viewModel.playSound(selected)
-        }
-
-        buttonSetStartup.setOnClickListener {
-            val selected = spinnerSounds.selectedItem as? String ?: return@setOnClickListener
-            viewModel.setStartupSound(selected)
-        }
-
-        buttonSetRempod.setOnClickListener {
-            Toast.makeText(this, "Rempod sound coming soon", Toast.LENGTH_SHORT).show()
-        }
-
-        buttonSetMusicbox.setOnClickListener {
-            Toast.makeText(this, "Music box sound coming soon", Toast.LENGTH_SHORT).show()
+        buttonBackToModes.setOnClickListener {
+            finish()
+            overridePendingTransition(R.anim.fade_in_static, R.anim.fade_out_static)
         }
 
         buttonApplySweepCfg.setOnClickListener {
@@ -314,14 +384,6 @@ class ControlActivity : AppCompatActivity() {
             viewModel.setBoxConfig(min, max, speed)
         }
 
-        buttonDeviceSettings.setOnClickListener {
-            val intent = android.content.Intent(this, com.apx.oraclebox.ui.settings.DeviceSettingsActivity::class.java).apply {
-                putExtra(EXTRA_DEVICE_ADDRESS, intent.getStringExtra(EXTRA_DEVICE_ADDRESS))
-                putExtra(EXTRA_DEVICE_NAME, intent.getStringExtra(EXTRA_DEVICE_NAME))
-            }
-            startActivity(intent)
-        }
-
         buttonMute.setOnClickListener {
             val newMute = !isMuted
             val cmd = if (newMute) "MUTE ON" else "MUTE OFF"
@@ -329,31 +391,194 @@ class ControlActivity : AppCompatActivity() {
             isMuted = newMute
             updateMuteButton()
         }
-    }
 
-    private val pickSoundLauncher = registerForActivityResult(
-        androidx.activity.result.contract.ActivityResultContracts.GetContent()
-    ) { uri ->
-        if (uri != null) {
-            val resolvedName = resolveDisplayName(uri)
-                ?: uri.lastPathSegment?.substringAfterLast('/')
-                ?: "sound_${System.currentTimeMillis()}.wav"
-            contentResolver.openInputStream(uri)?.use { input ->
-                val data = input.readBytes()
-                viewModel.uploadSound(resolvedName, data)
+        // FX Controls
+        switchFxEnabled.setOnCheckedChangeListener { _, isChecked ->
+            if (!isUpdatingFxUi) {
+                viewModel.setFxEnabled(isChecked)
             }
         }
+
+        buttonModeFM.setOnClickListener {
+            currentMode = "FM"
+            updateModeButtons()
+            showModePresetsDialog()
+        }
+        
+        buttonModeSB7.setOnClickListener {
+            currentMode = "SB7"
+            updateModeButtons()
+            showModePresetsDialog()
+        }
+        
+        buttonSavePreset.setOnClickListener {
+            showSavePresetDialog()
+        }
+
+        sliderBpLow.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingFxUi) {
+                    val lowHz = (sliderBpLow.progress + 200)
+                    val highHz = (sliderBpHigh.progress + 2000)
+                    viewModel.updateBandpass(lowHz, highHz)
+                }
+            }
+        })
+
+        sliderBpHigh.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingFxUi) {
+                    val lowHz = (sliderBpLow.progress + 200)
+                    val highHz = (sliderBpHigh.progress + 2000)
+                    viewModel.updateBandpass(lowHz, highHz)
+                }
+            }
+        })
+
+        sliderContrast.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingFxUi) {
+                    viewModel.updateContrast(sliderContrast.progress)
+                }
+            }
+        })
+
+        sliderReverb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingFxUi) {
+                    viewModel.updateReverb(sliderReverb.progress)
+                }
+            }
+        })
+
+        sliderGain.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingFxUi) {
+                    val gainDb = sliderGain.progress - 12
+                    viewModel.updateGain(gainDb)
+                }
+            }
+        })
+
+        // Mixer Controls
+        sliderSpeakerVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingMixerUi) {
+                    viewModel.setSpeakerVolume(sliderSpeakerVolume.progress)
+                }
+            }
+        })
+
+        sliderMicVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onStartTrackingTouch(seekBar: SeekBar?) {}
+            override fun onStopTrackingTouch(seekBar: SeekBar?) {
+                if (!isUpdatingMixerUi) {
+                    viewModel.setMicVolume(sliderMicVolume.progress)
+                }
+            }
+        })
     }
 
-    private fun resolveDisplayName(uri: android.net.Uri): String? {
-        val projection = arrayOf(OpenableColumns.DISPLAY_NAME)
-        return contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-            val idx = cursor.getColumnIndex(OpenableColumns.DISPLAY_NAME)
-            if (idx >= 0 && cursor.moveToFirst()) cursor.getString(idx) else null
-        }
+    private fun hideSweepControls() {
+        findViewById<LinearLayout>(R.id.layout_status_cards)?.visibility = android.view.View.GONE
+        findViewById<LinearLayout>(R.id.layout_sweep_buttons)?.visibility = android.view.View.GONE
+        findViewById<LinearLayout>(R.id.layout_direction_buttons)?.visibility = android.view.View.GONE
+    }
+
+    private fun showSweepControls() {
+        findViewById<LinearLayout>(R.id.layout_status_cards)?.visibility = android.view.View.VISIBLE
+        findViewById<LinearLayout>(R.id.layout_sweep_buttons)?.visibility = android.view.View.VISIBLE
+        findViewById<LinearLayout>(R.id.layout_direction_buttons)?.visibility = android.view.View.VISIBLE
     }
 
     private fun updateMuteButton() {
         buttonMute.text = if (isMuted) "Unmute" else "Mute"
+    }
+
+    private fun updateModeButtons() {
+        val fmColor = if (currentMode == "FM") android.R.color.holo_green_light else android.R.color.darker_gray
+        val sb7Color = if (currentMode == "SB7") android.R.color.holo_green_light else android.R.color.darker_gray
+        buttonModeFM.setTextColor(getColor(fmColor))
+        buttonModeSB7.setTextColor(getColor(sb7Color))
+    }
+    
+    private fun showModePresetsDialog() {
+        // Reload presets in case they weren't loaded yet
+        viewModel.loadFxPresets()
+        
+        val presets = viewModel.fxPresets.value ?: emptyList()
+        if (presets.isEmpty()) {
+            Toast.makeText(this, "Loading presets...", Toast.LENGTH_SHORT).show()
+            // Try again after a short delay
+            android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                showModePresetsDialog()
+            }, 500)
+            return
+        }
+
+        // Filter presets by current mode
+        val modePresets = presets.filter { it.category == currentMode }
+        
+        if (modePresets.isEmpty()) {
+            Toast.makeText(this, "No ${currentMode} presets available", Toast.LENGTH_SHORT).show()
+            return
+        }
+
+        // Build dialog items
+        val items = modePresets.map { preset ->
+            preset.name.replace("${currentMode}_", "").replace("_", " ")
+        }.toTypedArray()
+
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Select ${currentMode} Preset")
+            .setItems(items) { _, which ->
+                val selectedPreset = modePresets[which]
+                viewModel.applyFxPreset(selectedPreset.name)
+                Toast.makeText(
+                    this,
+                    "Applied: ${selectedPreset.name}",
+                    Toast.LENGTH_SHORT
+                ).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
+    }
+    
+    private fun showSavePresetDialog() {
+        val input = android.widget.EditText(this)
+        input.hint = "Enter preset name"
+        input.inputType = android.text.InputType.TYPE_CLASS_TEXT or android.text.InputType.TYPE_TEXT_FLAG_CAP_WORDS
+        
+        android.app.AlertDialog.Builder(this)
+            .setTitle("Save Custom Preset")
+            .setMessage("Save current FX settings as a new ${currentMode} preset:")
+            .setView(input)
+            .setPositiveButton("Save") { _, _ ->
+                val name = input.text.toString().trim()
+                if (name.isEmpty()) {
+                    Toast.makeText(this, "Please enter a preset name", Toast.LENGTH_SHORT).show()
+                    return@setPositiveButton
+                }
+                
+                // Format the preset name
+                val presetName = "${currentMode}_${name.uppercase().replace(" ", "_")}"
+                viewModel.saveCustomPreset(presetName, currentMode)
+                Toast.makeText(this, "Saved: $presetName", Toast.LENGTH_SHORT).show()
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 }

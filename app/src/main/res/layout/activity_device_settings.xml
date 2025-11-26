@@ -1,27 +1,85 @@
 <?xml version="1.0" encoding="utf-8"?>
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:padding="16dp"
     android:background="@drawable/wood_bg"
     android:backgroundTint="#784A38"
-    android:backgroundTintMode="multiply">
+    android:backgroundTintMode="multiply"
+    android:fitsSystemWindows="true"
+    android:orientation="vertical"
+    android:paddingLeft="16dp"
+    android:paddingRight="16dp"
+    android:paddingBottom="16dp"
+    android:paddingTop="32dp">
 
+    <!-- Header with integrated back button -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:background="@drawable/bg_bakelite_button"
+        android:orientation="horizontal"
+        android:gravity="center_vertical"
+        android:padding="8dp">
 
         <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="DEVICE SETTINGS"
+            android:textColor="@color/gothic_gold"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/button_back_to_modes_ds"
+            style="@style/OracleBox.BakeliteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="◀ BACK"
+            android:textSize="10sp"
+            android:backgroundTint="@null"
+            android:minHeight="0dp"
+            android:paddingVertical="4dp" />
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:fillViewport="true">
+
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="@drawable/bg_gothic_bubble"
-            android:text="Device Settings"
-            android:textColor="@color/ghost_on_surface"
-            android:textStyle="bold"
-            android:textSize="18sp" />
+            android:orientation="vertical">
 
-        <Space android:layout_width="match_parent" android:layout_height="12dp" />
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
+            <ImageView
+                android:id="@+id/image_logo_ds"
+                android:layout_width="72dp"
+                android:layout_height="72dp"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="16dp"
+                android:foreground="@mipmap/sqlogo_foreground"
+                android:scaleX="2"
+                android:scaleY="2" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center_horizontal"
+                android:layout_marginTop="8dp"
+                android:text="OracleBox"
+                android:textColor="#D7B972"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
 
         <TextView
             android:layout_width="wrap_content"
@@ -79,20 +137,191 @@
             android:textColor="@color/ghost_on_surface"
             android:textStyle="bold" />
 
-        <TextView
-            android:id="@+id/text_startup_sound_settings"
+        <!-- Startup sound status card -->
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:text="None"
-            android:textColor="@color/ic_launcher_background"
+            android:layout_marginTop="8dp"
+            android:background="@drawable/bg_dsilver_bubble"
+            android:gravity="center"
+            android:orientation="vertical"
+            android:padding="12dp">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="CURRENT STARTUP SOUND"
+                android:textAllCaps="true"
+                android:textColor="@color/ghost_surface"
+                android:textSize="10sp" />
+
+            <TextView
+                android:id="@+id/text_startup_sound_settings"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:text="None"
+                android:textColor="@color/gothic_gold"
+                android:textSize="14sp"
+                android:textStyle="bold" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/button_upload_sound_settings"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="UPLOAD SOUND"
+                android:backgroundTint="@null" />
+
+            <Button
+                android:id="@+id/button_play_sound_settings"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="PLAY SELECTED"
+                android:backgroundTint="@null" />
+        </LinearLayout>
+
+        <!-- Upload progress -->
+        <ProgressBar
+            android:id="@+id/progress_upload_settings"
+            style="?android:attr/progressBarStyleHorizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:max="100"
+            android:progress="0"
+            android:visibility="gone" />
+
+        <Spinner
+            android:id="@+id/spinner_sounds_settings"
+            android:layout_width="match_parent"
+            android:layout_height="97dp"
+            android:layout_marginTop="4dp"
+            android:background="@drawable/bg_log_window" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="60dp"
+            android:layout_marginTop="4dp"
+            android:gravity="center_horizontal"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/button_refresh_sounds_settings"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="161dp"
+                android:layout_height="32dp"
+                android:backgroundTint="@null"
+                android:text="REFRESH SOUND LIST"
+                android:textSize="10sp" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="4dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/button_set_startup_settings"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="SET AS STARTUP"
+                android:backgroundTint="@null" />
+
+            <Button
+                android:id="@+id/button_clear_startup"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="CLEAR STARTUP"
+                android:backgroundTint="@null" />
+        </LinearLayout>
+
+        <Space android:layout_width="match_parent" android:layout_height="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_gothic_bubble"
+            android:text="Bluetooth Audio (Estes Method)"
+            android:textColor="@color/ghost_on_surface"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Connect Bluetooth headphones for private spirit box audio"
+            android:textColor="@color/ghost_on_surface"
+            android:textSize="12sp"
             android:paddingTop="4dp"/>
 
         <Button
-            android:id="@+id/button_clear_startup"
+            android:id="@+id/button_stream_to_phone"
+            style="@style/OracleBox.BakeliteButton"
+            android:layout_width="239dp"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:backgroundTint="@color/gothic_gold"
+            android:text="▶ STREAM TO THIS PHONE"
+            android:textColor="@color/black"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/button_refresh_bt_devices"
             style="@style/OracleBox.BakeliteButton"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="CLEAR STARTUP SOUND"
+            android:text="SCAN FOR OTHER HEADPHONES"
+            android:backgroundTint="@null"
+            android:layout_marginTop="6dp"/>
+
+        <TextView
+            android:id="@+id/text_bt_audio_status"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:paddingTop="8dp"
+            android:text=""
+            android:textColor="@color/gothic_gold"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Available Devices (tap to connect):"
+            android:textColor="@color/ghost_on_surface"
+            android:paddingTop="8dp"/>
+
+        <TextView
+            android:id="@+id/text_bt_device_list"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textColor="@color/ic_launcher_background"
+            android:paddingTop="4dp"
+            android:background="@drawable/bg_log_window"
+            android:padding="8dp"
+            android:minHeight="60dp"
+            android:text="Tap 'SCAN FOR HEADPHONES' to find devices"/>
+
+        <Button
+            android:id="@+id/button_disconnect_bt"
+            style="@style/OracleBox.BakeliteButton"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="DISCONNECT HEADPHONES"
             android:backgroundTint="@null"
             android:layout_marginTop="6dp"/>
 
@@ -125,6 +354,8 @@
 
         <Space android:layout_width="match_parent" android:layout_height="22dp" />
 
-    </LinearLayout>
+        </LinearLayout>
 
-</ScrollView>
+    </ScrollView>
+
+</LinearLayout>

@@ -166,4 +166,26 @@ class BluetoothRepository(
             }
         }
     }
+
+    // --- FX COMMANDS ---
+    suspend fun fxStatus(): OracleBoxResponse = sendRawCommand("FX STATUS")
+    suspend fun fxEnable(): OracleBoxResponse = sendRawCommand("FX ENABLE")
+    suspend fun fxDisable(): OracleBoxResponse = sendRawCommand("FX DISABLE")
+    suspend fun fxSet(param: String, value: Int): OracleBoxResponse =
+        sendRawCommand("FX SET $param $value")
+    
+    // --- FX PRESET COMMANDS ---
+    suspend fun fxPresetList(): OracleBoxResponse = sendRawCommand("FX PRESET LIST")
+    suspend fun fxPresetStatus(): OracleBoxResponse = sendRawCommand("FX PRESET STATUS")
+    suspend fun fxPresetSet(presetName: String): OracleBoxResponse =
+        sendRawCommand("FX PRESET SET $presetName")
+
+    // --- MIXER COMMANDS ---
+    suspend fun mixerStatus(): OracleBoxResponse = sendRawCommand("MIXER STATUS")
+    suspend fun setSpeakerVolume(level: Int): OracleBoxResponse =
+        sendRawCommand("MIXER SET SPEAKER_VOL $level")
+    suspend fun setMicVolume(level: Int): OracleBoxResponse =
+        sendRawCommand("MIXER SET MIC_VOL $level")
+    suspend fun setAutoGain(enabled: Boolean): OracleBoxResponse =
+        sendRawCommand("MIXER SET AUTO_GAIN ${if (enabled) "ON" else "OFF"}")
 }

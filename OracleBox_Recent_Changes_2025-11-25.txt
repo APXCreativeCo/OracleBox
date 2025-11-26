@@ -1,0 +1,173 @@
+========================================
+ORACLEBOX FX & MIXER IMPLEMENTATION
+November 25, 2025
+========================================
+
+OVERVIEW:
+Complete end-to-end implementation of Audio FX and ALSA Mixer controls for OracleBox.
+This adds Pi-side ALSA mixer commands, Android ViewModel state management, and full UI integration.
+
+========================================
+1. PI-SIDE (oraclebox.py) - ALSA MIXER COMMANDS
+========================================
+
+Added four new helper functions:
+- get_mixer_status(): Parses `amixer -c 3 contents` output and extracts:
+  * speaker_volume (numid=6, range 0-37)
+  * mic_capture_volume (numid=8, range 0-35)
+  * auto_gain (numid=9, on/off)
+  * sidetone_volume (numid=3)
+  * speaker_mute (numid=7)
+  * mic_capture_switch (numid=4)
+  * Returns JSON dict with all current mixer values
+
+- set_speaker_volume(level): Sets speaker volume (0-37) via `amixer -c 3 cset numid=6 <level>`
+- set_mic_volume(level): Sets mic capture volume (0-35) via `amixer -c 3 cset numid=8 <level>`
+- set_auto_gain(enabled): Toggles auto gain via `amixer -c 3 cset numid=9 on/off`
+
+Added MIXER command family in handle_command():
+- "MIXER STATUS" → Returns OK with JSON mixer status
+- "MIXER SET SPEAKER_VOL <0-37>" → Sets speaker volume
+- "MIXER SET MIC_VOL <0-35>" → Sets mic volume
+- "MIXER SET AUTO_GAIN <ON|OFF>" → Enables/disables auto gain
+
+All commands return "OK ..." on success or "ERR ..." on failure.
+
+========================================
+2. ANDROID VIEWMODEL (ControlViewModel.kt)
+========================================
+
+Added two new state data classes:
+- FxUiState: Tracks enabled, bpLowHz (200-1000), bpHighHz (2000-4000), contrast (0-50), 
+  reverbLevel (0-60), gainDb (-12 to +12), loading, error
+- MixerUiState: Tracks speakerVolume (0-37), micVolume (0-35), autoGain, loading, error
+
+Added LiveData properties:
+- _fxUiState / fxUiState (private MutableLiveData / public LiveData)
+- _mixerUiState / mixerUiState (private MutableLiveData / public LiveData)
+
+Implemented 10 new ViewModel methods:
+FX Methods:
+- loadFxStatus(): Calls repository.fxStatus(), parses JSON response, updates LiveData
+- setFxEnabled(enabled): Calls fxEnable/fxDisable, then refreshes status
+- updateBandpass(lowHz, highHz): Validates range, calls fxSet("BP_LOW", lowHz) and fxSet("BP_HIGH", highHz)
+- updateContrast(contrast): Validates 0-50, calls fxSet("CONTRAST", contrast)
+- updateReverb(level): Validates 0-60, calls fxSet("REVERB", level)
+- updateGain(gainDb): Validates -12 to +12, calls fxSet("GAIN", gainDb)
+
+Mixer Methods:
+- loadMixerStatus(): Calls repository.mixerStatus(), parses JSON response, updates LiveData
+- setSpeakerVolume(level): Validates 0-37, calls repository.setSpeakerVolume(level)
+- setMicVolume(level): Validates 0-35, calls repository.setMicVolume(level)
+- setAutoGain(enabled): Calls repository.setAutoGain(enabled)
+
+All methods use viewModelScope.launch, proper error handling, and JSON parsing.
+
+========================================
+3. ANDROID UI LAYOUT (activity_control.xml)
+========================================
+
+Added "Audio FX & Mixer" section before LOG VIEW with:
+
+FX Controls:
+- switch_fx_enabled: Material Switch to enable/disable FX
+- slider_bp_low: SeekBar (max=800) for bandpass low frequency (200-1000 Hz range)
+- slider_bp_high: SeekBar (max=2000) for bandpass high frequency (2000-4000 Hz range)
+- slider_contrast: SeekBar (max=50) for contrast level
+- slider_reverb: SeekBar (max=60) for reverb level
+- slider_gain: SeekBar (max=24) for gain (-12 to +12 dB, slider 0-24 maps to this)
+
+Mixer Controls:
+- slider_speaker_volume: SeekBar (max=37) for speaker volume
+- slider_mic_volume: SeekBar (max=35) for mic capture volume
+- switch_auto_gain: Material Switch for automatic gain control
+
+All controls styled with bg_gothic_bubble background and proper Material theming.
+
+========================================
+4. ANDROID ACTIVITY (ControlActivity.kt)
+========================================
+
+Added 9 new view properties:
+- switchFxEnabled, sliderBpLow, sliderBpHigh, sliderContrast, sliderReverb, sliderGain
+- sliderSpeakerVolume, sliderMicVolume, switchAutoGain
+
+Added findViewById bindings in bindViews() for all 9 controls.
+
+Added LiveData observers in setupObservers():
+- fxUiState observer: Updates all FX switches/sliders, shows toast on error
+  * Maps slider values to correct ranges (e.g., gain slider 0-24 → -12 to +12 dB)
+  * Uses coerceIn() to ensure values stay in valid ranges
+- mixerUiState observer: Updates mixer sliders/switch, shows toast on error
+
+Added initial load calls:
+- viewModel.loadFxStatus() and viewModel.loadMixerStatus() called after observer setup
+
+Added 9 listeners in setupButtons():
+- switchFxEnabled.setOnCheckedChangeListener → viewModel.setFxEnabled()
+- sliderBpLow/High OnSeekBarChangeListener → viewModel.updateBandpass() on stopTrackingTouch
+- sliderContrast OnSeekBarChangeListener → viewModel.updateContrast() on stopTrackingTouch
+- sliderReverb OnSeekBarChangeListener → viewModel.updateReverb() on stopTrackingTouch
+- sliderGain OnSeekBarChangeListener → viewModel.updateGain() on stopTrackingTouch (maps 0-24 → -12 to +12)
+- sliderSpeakerVolume OnSeekBarChangeListener → viewModel.setSpeakerVolume() on stopTrackingTouch
+- sliderMicVolume OnSeekBarChangeListener → viewModel.setMicVolume() on stopTrackingTouch
+- switchAutoGain.setOnCheckedChangeListener → viewModel.setAutoGain()
+
+All listeners follow existing activity patterns with proper value transformations.
+
+========================================
+TECHNICAL NOTES FOR CHATGPT:
+========================================
+
+ALSA Configuration:
+- USB sound card is device 3 (`amixer -c 3`)
+- Numid mappings:
+  * numid=3: Sidetone volume
+  * numid=4: Mic capture switch
+  * numid=6: Speaker volume (0-37)
+  * numid=7: Speaker mute switch
+  * numid=8: Mic capture volume (0-35)
+  * numid=9: Auto gain control (boolean)
+
+Communication Protocol:
+- Commands sent via Bluetooth SPP as plain text
+- Responses format: "OK <data>" or "ERR <message>"
+- JSON data embedded in OK responses after space
+
+Value Ranges & Transformations:
+- Bandpass Low: UI slider 0-800 → actual Hz 200-1000
+- Bandpass High: UI slider 0-2000 → actual Hz 2000-4000
+- Gain: UI slider 0-24 → actual dB -12 to +12
+- Speaker: UI slider 0-37 → direct mapping to ALSA
+- Mic: UI slider 0-35 → direct mapping to ALSA
+- Contrast: 0-50, Reverb: 0-60 (direct mapping)
+
+Architecture Pattern:
+- Repository layer (BluetoothRepository) handles Bluetooth commands
+- ViewModel layer manages state and business logic with coroutines
+- Activity layer binds UI to ViewModel with LiveData observers
+- All async operations use viewModelScope.launch
+- Error handling at every layer with user-facing toasts
+
+CONSTRAINTS FOLLOWED:
+- Did NOT modify existing OracleBoxState, LedConfig, or FX command handling
+- Only added new MIXER command family and extended UI
+- Preserved all existing functionality
+
+========================================
+TESTING CHECKLIST:
+========================================
+□ Verify `amixer -c 3 contents` returns expected numids on Pi
+□ Test MIXER STATUS command returns valid JSON
+□ Test MIXER SET commands change actual hardware values
+□ Verify Android UI controls update when status loads
+□ Test slider interactions trigger correct ViewModel methods
+□ Verify value transformations (gain, bandpass) work correctly
+□ Test error handling with invalid values
+□ Verify FX enable/disable toggle works
+□ Test auto gain switch functionality
+□ Confirm toast messages appear on errors
+
+========================================
+END OF CHANGES
+========================================

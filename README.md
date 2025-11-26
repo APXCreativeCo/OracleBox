@@ -88,3 +88,4 @@ From the project root:
 - Route audio through a USB interface for band-pass filtering (roughly 600-3500 Hz) and portal-style reverb/chorus.
 - Accept external sweep sources (e.g., SB7 headphone out) as input for processing.
 - Expand the Android UI with controls for effects stacks once the Pi pipeline is ready.
+- Add session recording: once FM/SB7 audio is routed through the Pi sound card, `oraclebox.py` will expose `RECORD START/STOP/STATUS` commands to capture USB input to timestamped WAV/FLAC files, and the Android controller will reflect that state with buttons/toggles so you can record sweeps or external SB7 sessions straight from the app.

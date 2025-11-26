@@ -80,9 +80,8 @@ class DeviceSettingsActivity : AppCompatActivity() {
             textStartupSound.text = if (st?.startupSound.isNullOrBlank()) "None" else st?.startupSound
         }
 
-        viewModel.soundFiles.observe(this) { sounds ->
-            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item,
-                sounds.map { it.name })
+        viewModel.soundList.observe(this) { sounds ->
+            val adapter = ArrayAdapter(this, android.R.layout.simple_spinner_item, sounds)
             adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
             spinnerSounds.adapter = adapter
         }
@@ -102,21 +101,21 @@ class DeviceSettingsActivity : AppCompatActivity() {
 
         buttonPlaySound.setOnClickListener {
             val pos = spinnerSounds.selectedItemPosition
-            val sounds = viewModel.soundFiles.value ?: return@setOnClickListener
+            val sounds = viewModel.soundList.value ?: return@setOnClickListener
             if (pos >= 0 && pos < sounds.size) {
-                viewModel.playSound(sounds[pos].name)
+                viewModel.playSound(sounds[pos])
             }
         }
 
         buttonRefreshSounds.setOnClickListener {
-            viewModel.refreshSoundFiles()
+            viewModel.refreshSounds()
         }
 
         buttonSetStartup.setOnClickListener {
             val pos = spinnerSounds.selectedItemPosition
-            val sounds = viewModel.soundFiles.value ?: return@setOnClickListener
+            val sounds = viewModel.soundList.value ?: return@setOnClickListener
             if (pos >= 0 && pos < sounds.size) {
-                viewModel.setStartupSound(sounds[pos].name)
+                viewModel.setStartupSound(sounds[pos])
                 viewModel.refreshStatus()
             }
         }
@@ -195,7 +194,7 @@ class DeviceSettingsActivity : AppCompatActivity() {
         // Load initial status for display
         viewModel.refreshStatus()
         viewModel.refreshBtAudioStatus()
-        viewModel.refreshSoundFiles()
+        viewModel.refreshSounds()
     }
 
     private fun showBtDeviceSelectionDialog(devices: List<com.apx.oraclebox.data.BtAudioDevice>) {

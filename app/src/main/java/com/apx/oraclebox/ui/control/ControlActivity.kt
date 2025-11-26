@@ -201,17 +201,6 @@ class ControlActivity : AppCompatActivity() {
             updateMuteButton()
         }
 
-        viewModel.soundList.observe(this) { list ->
-            val adapter = ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_item,
-                list
-            ).also {
-                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            spinnerSounds.adapter = adapter
-        }
-
         viewModel.logs.observe(this) { logs ->
             val builder = StringBuilder()
             logs.takeLast(50).forEach { entry ->
@@ -227,14 +216,6 @@ class ControlActivity : AppCompatActivity() {
             scrollLogs.post {
                 scrollLogs.fullScroll(ScrollView.FOCUS_DOWN)
             }
-        }
-
-        viewModel.uploadInProgress.observe(this) { inProgress ->
-            progressUpload.visibility = if (inProgress == true) android.view.View.VISIBLE else android.view.View.GONE
-        }
-
-        viewModel.uploadProgress.observe(this) { value ->
-            progressUpload.progress = value ?: 0
         }
 
         viewModel.errorMessage.observe(this) { msg ->

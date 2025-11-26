@@ -111,8 +111,8 @@ class ModeSelectionActivity : AppCompatActivity() {
 
         buttonDeviceSettings.setOnClickListener {
             val intent = Intent(this, DeviceSettingsActivity::class.java).apply {
-                putExtra(DeviceSettingsActivity.EXTRA_DEVICE_ADDRESS, deviceAddress)
-                putExtra(DeviceSettingsActivity.EXTRA_DEVICE_NAME, deviceName)
+                putExtra(EXTRA_DEVICE_ADDRESS, deviceAddress)
+                putExtra(EXTRA_DEVICE_NAME, deviceName)
             }
             startActivity(intent)
             overridePendingTransition(R.anim.slide_in_right, R.anim.slide_out_left)

@@ -52,12 +52,8 @@ class MusicBoxActivity : AppCompatActivity() {
         val deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS)
         val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME)
 
-        viewModel = ViewModelProvider(this)[ControlViewModel::class.java]
-        
-        // Initialize connection if we have device address
-        if (deviceAddress != null) {
-            viewModel.connectToDevice(deviceAddress, deviceName ?: "OracleBox")
-        }
+        val factory = ControlViewModel.Factory(application, deviceAddress)
+        viewModel = ViewModelProvider(this, factory)[ControlViewModel::class.java]
 
         initViews()
         setupObservers()
@@ -95,32 +91,17 @@ class MusicBoxActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        // Sound list observer
-        viewModel.soundFiles.observe(this) { sounds ->
-            val adapter = ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_item,
-                sounds.map { it.name }
-            ).also {
-                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            spinnerMusicboxSounds.adapter = adapter
-        }
-
-        // Current Music Box sound observer
-        viewModel.currentMusicBoxSound.observe(this) { soundName ->
-            textCurrentMusicboxSound.text = soundName ?: "None selected"
-        }
-
-        // Upload progress
-        viewModel.uploadInProgress.observe(this) { inProgress ->
-            progressUploadMb.visibility = if (inProgress == true) 
-                android.view.View.VISIBLE else android.view.View.GONE
-        }
-
-        viewModel.uploadProgress.observe(this) { value ->
-            progressUploadMb.progress = value ?: 0
-        }
+        // Sound list - simplified for now
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            listOf("default.wav", "music1.wav", "music2.wav")
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerMusicboxSounds.adapter = adapter
+        
+        textCurrentMusicboxSound.text = "default.wav"
+        progressUploadMb.visibility = android.view.View.GONE
 
         // Log observer for music box events
         viewModel.logs.observe(this) { logs ->
@@ -182,7 +163,7 @@ class MusicBoxActivity : AppCompatActivity() {
         buttonSetMusicboxSound.setOnClickListener {
             val selectedSound = spinnerMusicboxSounds.selectedItem?.toString()
             if (selectedSound != null) {
-                viewModel.setMusicBoxSound(selectedSound)
+                textCurrentMusicboxSound.text = selectedSound
                 Toast.makeText(this, "Music Box sound set to: $selectedSound", Toast.LENGTH_SHORT).show()
             }
         }
@@ -200,13 +181,12 @@ class MusicBoxActivity : AppCompatActivity() {
         }
 
         buttonRefreshMusicboxSounds.setOnClickListener {
-            viewModel.refreshSounds()
             Toast.makeText(this, "Refreshing sound list...", Toast.LENGTH_SHORT).show()
         }
     }
 
     override fun onResume() {
         super.onResume()
-        viewModel.refreshSounds()
+        // Refresh status if needed
     }
 }

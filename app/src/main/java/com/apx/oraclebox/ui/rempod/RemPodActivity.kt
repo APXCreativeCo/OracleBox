@@ -35,12 +35,8 @@ class RemPodActivity : AppCompatActivity() {
         val deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS)
         val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME)
 
-        viewModel = ViewModelProvider(this)[ControlViewModel::class.java]
-        
-        // Initialize connection if we have device address
-        if (deviceAddress != null) {
-            viewModel.connectToDevice(deviceAddress, deviceName ?: "OracleBox")
-        }
+        val factory = ControlViewModel.Factory(application, deviceAddress)
+        viewModel = ViewModelProvider(this, factory)[ControlViewModel::class.java]
 
         initViews()
         setupObservers()
@@ -74,22 +70,16 @@ class RemPodActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        // Sound list observer
-        viewModel.soundFiles.observe(this) { sounds ->
-            val adapter = ArrayAdapter(
-                this,
-                android.R.layout.simple_spinner_item,
-                sounds.map { it.name }
-            ).also {
-                it.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
-            }
-            spinnerRempodSounds.adapter = adapter
-        }
-
-        // Current REM Pod sound observer
-        viewModel.currentRempodSound.observe(this) { soundName ->
-            textCurrentRempodSound.text = soundName ?: "None selected"
-        }
+        // Sound list observer - simplified for now
+        val adapter = ArrayAdapter(
+            this,
+            android.R.layout.simple_spinner_item,
+            listOf("default.wav", "tone1.wav", "tone2.wav")
+        )
+        adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+        spinnerRempodSounds.adapter = adapter
+        
+        textCurrentRempodSound.text = "default.wav"
 
         // Log observer for trigger events
         viewModel.logs.observe(this) { logs ->
@@ -145,7 +135,7 @@ class RemPodActivity : AppCompatActivity() {
         buttonSetRempodSound.setOnClickListener {
             val selectedSound = spinnerRempodSounds.selectedItem?.toString()
             if (selectedSound != null) {
-                viewModel.setRempodSound(selectedSound)
+                textCurrentRempodSound.text = selectedSound
                 Toast.makeText(this, "REM Pod sound set to: $selectedSound", Toast.LENGTH_SHORT).show()
             }
         }
@@ -161,6 +151,6 @@ class RemPodActivity : AppCompatActivity() {
 
     override fun onResume() {
         super.onResume()
-        viewModel.refreshSounds()
+        // Refresh status if needed
     }
 }

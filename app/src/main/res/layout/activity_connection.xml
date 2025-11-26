@@ -134,10 +134,11 @@
         <ListView
             android:id="@+id/list_devices"
             android:layout_width="match_parent"
-            android:layout_height="200dp"
+            android:layout_height="wrap_content"
             android:background="@drawable/bg_dsilver_bubble"
             android:dividerHeight="1dp"
-            android:padding="8dp" />
+            android:padding="8dp"
+            android:nestedScrollingEnabled="true" />
 
         <Space
             android:layout_width="match_parent"

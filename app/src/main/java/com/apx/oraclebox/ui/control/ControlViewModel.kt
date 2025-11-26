@@ -937,6 +937,13 @@ class ControlViewModel(
         }
     }
 
+    private fun log(message: String) {
+        // Log message to repository
+        val localRepo = repo ?: return
+        // Repository doesn't have log method, use println for now
+        println("ControlViewModel: $message")
+    }
+
     private fun refreshLogs() {
         val localRepo = repo ?: return
         _logs.value = localRepo.getLogs()

@@ -69,6 +69,9 @@ class ConnectionActivity : AppCompatActivity() {
             val names = devices.map { "${it.name} (${it.address})" }
             val adapter = ArrayAdapter(this, android.R.layout.simple_list_item_1, names)
             deviceListView.adapter = adapter
+            
+            // Set ListView height based on content to work inside ScrollView
+            setListViewHeightBasedOnChildren(deviceListView)
         }
 
         viewModel.connectionStatus.observe(this) {
@@ -171,6 +174,8 @@ class ConnectionActivity : AppCompatActivity() {
         if (requestCode == 1001) {
             if (grantResults.all { it == PackageManager.PERMISSION_GRANTED }) {
                 viewModel.refreshPairedDevices()
+                // Try auto-connect again now that we have permissions
+                attemptAutoConnect()
             } else {
                 Toast.makeText(
                     this,
@@ -180,9 +185,32 @@ class ConnectionActivity : AppCompatActivity() {
             }
         }
     }
+    
+    private fun setListViewHeightBasedOnChildren(listView: ListView) {
+        val listAdapter = listView.adapter ?: return
+        var totalHeight = 0
+        for (i in 0 until listAdapter.count) {
+            val listItem = listAdapter.getView(i, null, listView)
+            listItem.measure(0, 0)
+            totalHeight += listItem.measuredHeight
+        }
+        
+        val params = listView.layoutParams
+        params.height = totalHeight + (listView.dividerHeight * (listAdapter.count - 1))
+        listView.layoutParams = params
+        listView.requestLayout()
+    }
 
     private fun attemptAutoConnect() {
-        if (!ensureBluetoothPermissions()) {
+        // Check if we have permissions without requesting them
+        val hasPermissions = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.S) {
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.BLUETOOTH_CONNECT) == PackageManager.PERMISSION_GRANTED
+        } else {
+            ActivityCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION) == PackageManager.PERMISSION_GRANTED
+        }
+        
+        if (!hasPermissions) {
+            // Don't auto-connect if we don't have permissions yet
             return
         }
 
@@ -195,7 +223,11 @@ class ConnectionActivity : AppCompatActivity() {
             startLoadingAnimation()
             
             // Try to find saved device in paired devices
-            val adapter = bluetoothAdapter ?: return
+            val adapter = bluetoothAdapter ?: run {
+                stopLoadingAnimation()
+                statusText.text = "Bluetooth not available"
+                return
+            }
             
             // Simulate connection attempt with delay for visual effect
             Handler(Looper.getMainLooper()).postDelayed({
@@ -208,7 +240,8 @@ class ConnectionActivity : AppCompatActivity() {
                         
                         // Start swoop animation then navigate
                         Handler(Looper.getMainLooper()).postDelayed({
-                            startSwoopTransition(device.address, device.name ?: savedName)
+                            val finalName = device.name ?: savedName ?: "OracleBox"
+                            startSwoopTransition(device.address, finalName)
                         }, 300)
                     } else {
                         // Saved device not found in paired devices

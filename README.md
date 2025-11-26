@@ -179,13 +179,34 @@ Parameters: low pitch (5), slow speed (70 wpm), dual echo layers, 70% reverb, +1
 - **Back button not working**: Check activity launch modes and transition animations
 - **Controls hidden after start**: This is intentional - press START button to show controls
 
+## Current Audio System
+
+### ✅ Implemented Audio Pipeline
+- **USB Audio Interface**: TEA5767 FM audio routed through USB sound card (plughw:3,0)
+- **Dual Audio Modes**:
+  - **FX OFF**: Raw FM passthrough (arecord → aplay) with live sweep audio
+  - **FX ON**: Processed audio with SoX effects chain (band-pass 500-2600Hz, reverb, contrast, gain)
+- **TEA5767 Configuration**: Unmuted audio output with high-side injection and stereo mode
+- **Seamless Switching**: Toggle between raw and processed audio without interruption
+
+### Audio Flow
+```
+TEA5767 FM Tuner (I2C 0x60)
+    ↓ (analog L/R audio)
+USB Sound Card Input (plughw:3,0)
+    ↓
+[FX OFF] → Direct Passthrough → Speakers
+[FX ON]  → SoX Effects Chain → Speakers
+```
+
 ## Future Plans
 
-### Audio Pipeline
-- Route audio through USB interface for band-pass filtering (600-3500 Hz)
-- Implement portal-style reverb/chorus effects
+### Audio Enhancements
+- Expand band-pass filtering range (600-3500 Hz configurable)
+- Add adjustable portal-style reverb/chorus presets
 - Accept external sweep sources (SB7 headphone out) as input for processing
 - Add real-time audio visualization in app
+- Implement audio recording with FX chain
 
 ### Investigation Modes
 - **REM Pod Mode**: Complete implementation with EMF detection visualization

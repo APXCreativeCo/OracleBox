@@ -38,6 +38,11 @@ class RemPodActivity : AppCompatActivity() {
         val factory = ControlViewModel.Factory(application, deviceAddress)
         viewModel = ViewModelProvider(this, factory)[ControlViewModel::class.java]
 
+        // Apply ghostly flicker effect to logo
+        val logoImageView = findViewById<android.widget.ImageView>(R.id.image_logo_rp)
+        val flickerAnim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.ghostly_flicker)
+        logoImageView.startAnimation(flickerAnim)
+
         initViews()
         setupObservers()
         setupClickListeners()

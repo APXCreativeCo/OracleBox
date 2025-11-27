@@ -8,6 +8,7 @@ import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.lifecycle.viewModelScope
+import com.apx.oraclebox.OracleBoxApplication
 import com.apx.oraclebox.bt.BluetoothRepository
 import com.apx.oraclebox.data.LogEntry
 import com.apx.oraclebox.data.OracleBoxStatus
@@ -29,8 +30,19 @@ class ControlViewModel(
 ) : AndroidViewModel(application) {
 
     private val adapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
-    private val repo: BluetoothRepository? = adapter?.let {
-        BluetoothRepository(application.applicationContext, it)
+    
+    // Use singleton repository to maintain connection across activities
+    private val repo: BluetoothRepository? = run {
+        val existing = OracleBoxApplication.getBluetoothRepository(deviceAddress)
+        if (existing != null && existing.isConnected()) {
+            existing
+        } else {
+            adapter?.let {
+                val newRepo = BluetoothRepository(application.applicationContext, it)
+                OracleBoxApplication.setBluetoothRepository(newRepo)
+                newRepo
+            }
+        }
     }
 
     private val _status = MutableLiveData<OracleBoxStatus?>()
@@ -103,6 +115,16 @@ class ControlViewModel(
 
     private fun connectIfNeeded() {
         val localRepo = repo ?: return
+        
+        // If already connected, just update UI state and start listening
+        if (localRepo.isConnected()) {
+            _disconnected.postValue(false)
+            localRepo.startListeningForLines(viewModelScope)
+            _logs.postValue(localRepo.getLogs())
+            return
+        }
+        
+        // Not connected, so establish connection
         val addr = deviceAddress ?: return
         val adapter = BluetoothAdapter.getDefaultAdapter() ?: return
         val device = adapter.getRemoteDevice(addr)
@@ -307,11 +329,11 @@ class ControlViewModel(
         }
     }
 
-    fun refreshSounds() {
+    fun refreshSounds(folder: String? = null) {
         val localRepo = repo ?: return
         viewModelScope.launch {
             val list = withContext(Dispatchers.IO) {
-                localRepo.listSounds()
+                localRepo.listSounds(folder)
             }
             _soundList.value = list
             refreshLogs()
@@ -822,7 +844,8 @@ class ControlViewModel(
                                 com.apx.oraclebox.data.BtAudioDevice(
                                     mac = dev.getString("mac"),
                                     name = dev.getString("name"),
-                                    connected = dev.getBoolean("connected")
+                                    connected = dev.getBoolean("connected"),
+                                    paired = true  // LIST only returns paired devices
                                 )
                             )
                         }
@@ -831,6 +854,76 @@ class ControlViewModel(
                 }
             } catch (e: Exception) {
                 log("BT_AUDIO LIST error: ${e.message}")
+            } finally {
+                _btAudioLoading.value = false
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun discoverBtAudioDevices() {
+        val localRepo = repo ?: return
+        _btAudioLoading.value = true
+        viewModelScope.launch {
+            try {
+                val response = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO DISCOVER")
+                }
+                if (response.isOk) {
+                    val json = org.json.JSONObject(response.raw.substringAfter("OK BT_AUDIO DISCOVER "))
+                    val devicesArray = json.optJSONArray("devices")
+                    val devices = mutableListOf<com.apx.oraclebox.data.BtAudioDevice>()
+                    if (devicesArray != null) {
+                        for (i in 0 until devicesArray.length()) {
+                            val dev = devicesArray.getJSONObject(i)
+                            devices.add(
+                                com.apx.oraclebox.data.BtAudioDevice(
+                                    mac = dev.getString("mac"),
+                                    name = dev.getString("name"),
+                                    connected = dev.getBoolean("connected"),
+                                    paired = dev.getBoolean("paired")
+                                )
+                            )
+                        }
+                    }
+                    _btAudioDevices.value = devices
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO DISCOVER error: ${e.message}")
+            } finally {
+                _btAudioLoading.value = false
+                refreshLogs()
+            }
+        }
+    }
+    
+    fun pairAndConnectBtDevice(macAddress: String) {
+        val localRepo = repo ?: return
+        _btAudioLoading.value = true
+        viewModelScope.launch {
+            try {
+                // First pair the device
+                val pairResponse = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO PAIR $macAddress")
+                }
+                if (!pairResponse.isOk) {
+                    _errorMessage.postValue("Pairing failed: ${pairResponse.raw}")
+                    return@launch
+                }
+                
+                // Then connect to it
+                val connectResponse = withContext(Dispatchers.IO) {
+                    localRepo.sendRawCommand("BT_AUDIO CONNECT $macAddress")
+                }
+                if (connectResponse.isOk) {
+                    refreshBtAudioStatus()
+                    discoverBtAudioDevices()  // Refresh to show paired status
+                } else {
+                    _errorMessage.postValue("Connection failed: ${connectResponse.raw}")
+                }
+            } catch (e: Exception) {
+                log("BT_AUDIO PAIR/CONNECT error: ${e.message}")
+                _errorMessage.postValue("Error: ${e.message}")
             } finally {
                 _btAudioLoading.value = false
                 refreshLogs()

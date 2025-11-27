@@ -49,6 +49,11 @@ class MusicBoxActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_musicbox)
 
+        // Apply ghostly flicker effect to logo
+        val logoImageView = findViewById<android.widget.ImageView>(R.id.image_logo_mb)
+        val flickerAnim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.ghostly_flicker)
+        logoImageView.startAnimation(flickerAnim)
+
         val deviceAddress = intent.getStringExtra(EXTRA_DEVICE_ADDRESS)
         val deviceName = intent.getStringExtra(EXTRA_DEVICE_NAME)
 

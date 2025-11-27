@@ -67,6 +67,22 @@ class ControlActivity : AppCompatActivity() {
     private lateinit var sliderGain: SeekBar
     private lateinit var sliderSpeakerVolume: SeekBar
     private lateinit var sliderMicVolume: SeekBar
+    
+    // Value display TextViews
+    private lateinit var textBpLowValue: TextView
+    private lateinit var textBpHighValue: TextView
+    private lateinit var textContrastValue: TextView
+    private lateinit var textReverbValue: TextView
+    private lateinit var textGainValue: TextView
+    private lateinit var textSpeakerVolumeValue: TextView
+    private lateinit var textMicVolumeValue: TextView
+    
+    // Estes Method (Bluetooth Audio) controls
+    private lateinit var buttonRefreshBtDevicesSb: Button
+    private lateinit var textBtAudioStatusSb: TextView
+    private lateinit var labelBtDevicesSb: TextView
+    private lateinit var textBtDeviceListSb: TextView
+    private lateinit var buttonDisconnectBtSb: Button
 
     private val speedOptions = listOf(50, 100, 150, 200, 250, 300, 350)
     private val ledModes = listOf(
@@ -99,6 +115,11 @@ class ControlActivity : AppCompatActivity() {
         setupSpinners()
         setupObservers()
         setupButtons()
+        
+        // Apply ghostly flicker effect to logo
+        val logoImageView = findViewById<android.widget.ImageView>(R.id.image_logo)
+        val flickerAnim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.ghostly_flicker)
+        logoImageView.startAnimation(flickerAnim)
 
         viewModel.refreshStatus()
     }
@@ -156,6 +177,21 @@ class ControlActivity : AppCompatActivity() {
         sliderGain = findViewById(R.id.slider_gain)
         sliderSpeakerVolume = findViewById(R.id.slider_speaker_volume)
         sliderMicVolume = findViewById(R.id.slider_mic_volume)
+        
+        textBpLowValue = findViewById(R.id.text_bp_low_value)
+        textBpHighValue = findViewById(R.id.text_bp_high_value)
+        textContrastValue = findViewById(R.id.text_contrast_value)
+        textReverbValue = findViewById(R.id.text_reverb_value)
+        textGainValue = findViewById(R.id.text_gain_value)
+        textSpeakerVolumeValue = findViewById(R.id.text_speaker_volume_value)
+        textMicVolumeValue = findViewById(R.id.text_mic_volume_value)
+        
+        // Estes Method controls
+        buttonRefreshBtDevicesSb = findViewById(R.id.button_refresh_bt_devices_sb)
+        textBtAudioStatusSb = findViewById(R.id.text_bt_audio_status_sb)
+        labelBtDevicesSb = findViewById(R.id.label_bt_devices_sb)
+        textBtDeviceListSb = findViewById(R.id.text_bt_device_list_sb)
+        buttonDisconnectBtSb = findViewById(R.id.button_disconnect_bt_sb)
     }
 
     private fun setupSpinners() {
@@ -187,6 +223,18 @@ class ControlActivity : AppCompatActivity() {
             textSpeed.text = "${status.speedMs} ms"
             textSweepLed.text = status.sweepLedMode
             textBoxLed.text = status.boxLedMode
+
+            // Update START/STOP button visibility based on running state
+            if (status.running) {
+                buttonStart.visibility = android.view.View.GONE
+                buttonStop.visibility = android.view.View.VISIBLE
+                // If running, sweep controls should be visible
+                showSweepControls()
+                buttonStartSpiritBox.visibility = android.view.View.GONE
+            } else {
+                buttonStart.visibility = android.view.View.VISIBLE
+                buttonStop.visibility = android.view.View.GONE
+            }
 
             val speedIndex = speedOptions.indexOf(status.speedMs)
             if (speedIndex >= 0) spinnerSpeed.setSelection(speedIndex)
@@ -240,6 +288,13 @@ class ControlActivity : AppCompatActivity() {
             sliderReverb.progress = state.reverbLevel.coerceIn(0, 60)
             sliderGain.progress = (state.gainDb + 12).coerceIn(0, 24)
             
+            // Update value displays
+            textBpLowValue.text = "${state.bpLowHz} Hz"
+            textBpHighValue.text = "${state.bpHighHz} Hz"
+            textContrastValue.text = "${state.contrast}"
+            textReverbValue.text = "${state.reverbLevel}"
+            textGainValue.text = if (state.gainDb >= 0) "+${state.gainDb} dB" else "${state.gainDb} dB"
+            
             // Disable FX sliders when FX is off (passthrough mode)
             sliderBpLow.isEnabled = state.enabled
             sliderBpHigh.isEnabled = state.enabled
@@ -269,6 +324,10 @@ class ControlActivity : AppCompatActivity() {
             sliderSpeakerVolume.progress = state.speakerVolume.coerceIn(0, 37)
             sliderMicVolume.progress = state.micVolume.coerceIn(0, 35)
             
+            // Update value displays
+            textSpeakerVolumeValue.text = "${state.speakerVolume}"
+            textMicVolumeValue.text = "${state.micVolume}"
+            
             if (!state.error.isNullOrEmpty()) {
                 Toast.makeText(this, "Mixer: ${state.error}", Toast.LENGTH_SHORT).show()
             }
@@ -286,8 +345,14 @@ class ControlActivity : AppCompatActivity() {
     }
 
     private fun setupButtons() {
-        buttonStart.setOnClickListener { viewModel.start() }
-        buttonStop.setOnClickListener { viewModel.stop() }
+        buttonStart.setOnClickListener {
+            viewModel.start()
+            // Don't manually toggle visibility - let status observer handle it
+        }
+        buttonStop.setOnClickListener {
+            viewModel.stop()
+            // Don't manually toggle visibility - let status observer handle it
+        }
 
         buttonDirUp.setOnClickListener { viewModel.dirUp() }
         buttonDirDown.setOnClickListener { viewModel.dirDown() }
@@ -343,6 +408,7 @@ class ControlActivity : AppCompatActivity() {
             // Show sweep controls and start sweep
             showSweepControls()
             buttonStartSpiritBox.visibility = android.view.View.GONE
+            // Let status observer handle START/STOP button visibility
             viewModel.start()
         }
 
@@ -366,11 +432,9 @@ class ControlActivity : AppCompatActivity() {
         }
 
         buttonMute.setOnClickListener {
-            val newMute = !isMuted
-            val cmd = if (newMute) "MUTE ON" else "MUTE OFF"
+            val cmd = if (isMuted) "MUTE OFF" else "MUTE ON"
             viewModel.sendCommand(cmd)
-            isMuted = newMute
-            updateMuteButton()
+            // Don't manually toggle state - let status observer handle it when response comes back
         }
 
         // FX Controls
@@ -397,7 +461,10 @@ class ControlActivity : AppCompatActivity() {
         }
 
         sliderBpLow.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val lowHz = progress + 200
+                textBpLowValue.text = "$lowHz Hz"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingFxUi) {
@@ -409,7 +476,10 @@ class ControlActivity : AppCompatActivity() {
         })
 
         sliderBpHigh.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val highHz = progress + 2000
+                textBpHighValue.text = "$highHz Hz"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingFxUi) {
@@ -421,7 +491,9 @@ class ControlActivity : AppCompatActivity() {
         })
 
         sliderContrast.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                textContrastValue.text = "$progress"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingFxUi) {
@@ -431,7 +503,9 @@ class ControlActivity : AppCompatActivity() {
         })
 
         sliderReverb.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                textReverbValue.text = "$progress"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingFxUi) {
@@ -441,7 +515,10 @@ class ControlActivity : AppCompatActivity() {
         })
 
         sliderGain.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                val gainDb = progress - 12
+                textGainValue.text = if (gainDb >= 0) "+$gainDb dB" else "$gainDb dB"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingFxUi) {
@@ -453,7 +530,9 @@ class ControlActivity : AppCompatActivity() {
 
         // Mixer Controls
         sliderSpeakerVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                textSpeakerVolumeValue.text = "$progress"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingMixerUi) {
@@ -463,7 +542,9 @@ class ControlActivity : AppCompatActivity() {
         })
 
         sliderMicVolume.setOnSeekBarChangeListener(object : SeekBar.OnSeekBarChangeListener {
-            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {}
+            override fun onProgressChanged(seekBar: SeekBar?, progress: Int, fromUser: Boolean) {
+                textMicVolumeValue.text = "$progress"
+            }
             override fun onStartTrackingTouch(seekBar: SeekBar?) {}
             override fun onStopTrackingTouch(seekBar: SeekBar?) {
                 if (!isUpdatingMixerUi) {
@@ -471,6 +552,89 @@ class ControlActivity : AppCompatActivity() {
                 }
             }
         })
+        
+        // Estes Method (Bluetooth Audio) Controls
+        buttonRefreshBtDevicesSb.setOnClickListener {
+            Toast.makeText(this, "Scanning for Bluetooth headphones paired to Pi...", Toast.LENGTH_LONG).show()
+            viewModel.discoverBtAudioDevices()
+        }
+
+        buttonDisconnectBtSb.setOnClickListener {
+            viewModel.disconnectBtAudio()
+            Toast.makeText(this, "Restoring Pi speaker...", Toast.LENGTH_SHORT).show()
+        }
+        
+        // Observe Bluetooth audio status
+        viewModel.btAudioStatus.observe(this) { status ->
+            val statusText = when {
+                status == null -> "Output: Pi Speaker"
+                status.btConnected && status.btDevice == "PHONE" -> "Audio routed to this phone"
+                status.btConnected -> "Connected to headphones on Pi"
+                else -> "Output: Pi Speaker"
+            }
+            textBtAudioStatusSb.text = statusText
+            
+            // Update button text based on current state
+            if (status?.btConnected == true) {
+                buttonDisconnectBtSb.text = "SWITCH TO PI SPEAKER"
+            } else {
+                buttonDisconnectBtSb.text = "PI SPEAKER (ACTIVE)"
+            }
+        }
+
+        // Observe Bluetooth device list
+        viewModel.btAudioDevices.observe(this) { devices ->
+            if (devices.isEmpty()) {
+                labelBtDevicesSb.visibility = android.view.View.GONE
+                textBtDeviceListSb.visibility = android.view.View.GONE
+            } else {
+                labelBtDevicesSb.visibility = android.view.View.VISIBLE
+                textBtDeviceListSb.visibility = android.view.View.VISIBLE
+                
+                val lines = devices.map { dev ->
+                    val status = when {
+                        dev.connected -> "Connected"
+                        dev.paired -> "Paired (tap to connect)"
+                        else -> "New device (tap to pair)"
+                    }
+                    "${dev.name}\n${dev.mac}\n$status"
+                }
+                textBtDeviceListSb.text = lines.joinToString("\n\n")
+                
+                // Make device list clickable
+                textBtDeviceListSb.setOnClickListener {
+                    showBtDeviceSelectionDialog(devices)
+                }
+            }
+        }
+    }
+
+    private fun showBtDeviceSelectionDialog(devices: List<com.apx.oraclebox.data.BtAudioDevice>) {
+        val deviceNames = devices.map { dev ->
+            val status = when {
+                dev.connected -> "Connected"
+                dev.paired -> "Paired"
+                else -> "New Device"
+            }
+            "${dev.name} - $status"
+        }.toTypedArray()
+        
+        androidx.appcompat.app.AlertDialog.Builder(this)
+            .setTitle("Select Bluetooth Headphones")
+            .setItems(deviceNames) { _, which ->
+                val selectedDevice = devices[which]
+                if (selectedDevice.paired) {
+                    // Already paired, just connect
+                    viewModel.connectBtAudio(selectedDevice.mac)
+                    Toast.makeText(this, "Connecting to ${selectedDevice.name}...", Toast.LENGTH_SHORT).show()
+                } else {
+                    // Need to pair first
+                    viewModel.pairAndConnectBtDevice(selectedDevice.mac)
+                    Toast.makeText(this, "Pairing and connecting to ${selectedDevice.name}...", Toast.LENGTH_LONG).show()
+                }
+            }
+            .setNegativeButton("Cancel", null)
+            .show()
     }
 
     private fun hideSweepControls() {

@@ -129,8 +129,9 @@ class BluetoothRepository(
     // Android app uses Wi‑Fi/HTTP for uploads instead. The old uploadSound
     // method has been removed in favor of HTTP handled outside this class.
 
-    suspend fun listSounds(): List<String> {
-        val resp = sendRawCommand("SOUND LIST")
+    suspend fun listSounds(folder: String? = null): List<String> {
+        val cmd = if (folder != null) "SOUND LIST $folder" else "SOUND LIST"
+        val resp = sendRawCommand(cmd)
         if (!resp.isOk) return emptyList()
         val prefix = "OK SOUND LIST "
         val jsonPart = resp.raw.removePrefix(prefix)

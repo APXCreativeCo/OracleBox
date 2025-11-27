@@ -257,80 +257,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:background="@drawable/bg_gothic_bubble"
-            android:text="Bluetooth Audio (Estes Method)"
-            android:textColor="@color/ghost_on_surface"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:text="Connect Bluetooth headphones for private spirit box audio"
-            android:textColor="@color/ghost_on_surface"
-            android:textSize="12sp"
-            android:paddingTop="4dp"/>
-
-        <Button
-            android:id="@+id/button_stream_to_phone"
-            style="@style/OracleBox.BakeliteButton"
-            android:layout_width="239dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="6dp"
-            android:backgroundTint="@color/gothic_gold"
-            android:text="▶ STREAM TO THIS PHONE"
-            android:textColor="@color/black"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/button_refresh_bt_devices"
-            style="@style/OracleBox.BakeliteButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="SCAN FOR OTHER HEADPHONES"
-            android:backgroundTint="@null"
-            android:layout_marginTop="6dp"/>
-
-        <TextView
-            android:id="@+id/text_bt_audio_status"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:paddingTop="8dp"
-            android:text=""
-            android:textColor="@color/gothic_gold"
-            android:textStyle="bold" />
-
-        <TextView
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="Available Devices (tap to connect):"
-            android:textColor="@color/ghost_on_surface"
-            android:paddingTop="8dp"/>
-
-        <TextView
-            android:id="@+id/text_bt_device_list"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:textColor="@color/ic_launcher_background"
-            android:paddingTop="4dp"
-            android:background="@drawable/bg_log_window"
-            android:padding="8dp"
-            android:minHeight="60dp"
-            android:text="Tap 'SCAN FOR HEADPHONES' to find devices"/>
-
-        <Button
-            android:id="@+id/button_disconnect_bt"
-            style="@style/OracleBox.BakeliteButton"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:text="DISCONNECT HEADPHONES"
-            android:backgroundTint="@null"
-            android:layout_marginTop="6dp"/>
-
-        <Space android:layout_width="match_parent" android:layout_height="16dp" />
-
-        <TextView
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_gothic_bubble"
             android:text="Diagnostics"
             android:textColor="@color/ghost_on_surface"
             android:textStyle="bold" />
@@ -351,6 +277,41 @@
             android:textColor="@color/ghost_on_surface"
             android:paddingTop="4dp"
             android:text=""/>
+
+        <Space android:layout_width="match_parent" android:layout_height="16dp" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_gothic_bubble"
+            android:text="System Control"
+            android:textColor="@color/ghost_on_surface"
+            android:textStyle="bold" />
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="6dp"
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/button_restart_oraclebox"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="RESTART"
+                android:backgroundTint="@null" />
+
+            <Button
+                android:id="@+id/button_shutdown_oraclebox"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="SHUTDOWN"
+                android:backgroundTint="@null" />
+        </LinearLayout>
 
         <Space android:layout_width="match_parent" android:layout_height="22dp" />
 

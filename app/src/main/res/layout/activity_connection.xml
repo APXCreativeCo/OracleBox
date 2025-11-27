@@ -82,7 +82,7 @@
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
                 android:text="Not Connected"
-                android:textColor="@android:color/holo_red_light"
+                android:textColor="@color/ghost_sweep_yellow"
                 android:textSize="18sp"
                 android:textStyle="bold" />
 

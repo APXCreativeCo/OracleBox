@@ -36,6 +36,11 @@ class DeviceSettingsActivity : AppCompatActivity() {
         val factory = ControlViewModel.Factory(application, deviceAddress)
         viewModel = ViewModelProvider(this, factory)[ControlViewModel::class.java]
 
+        // Apply ghostly flicker effect to logo
+        val logoImageView = findViewById<android.widget.ImageView>(R.id.image_logo_ds)
+        val flickerAnim = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.ghostly_flicker)
+        logoImageView.startAnimation(flickerAnim)
+
         val buttonBackToModes: Button = findViewById(R.id.button_back_to_modes_ds)
         val textDeviceName: TextView = findViewById(R.id.text_device_name)
         val textDeviceAddr: TextView = findViewById(R.id.text_device_addr)
@@ -51,11 +56,8 @@ class DeviceSettingsActivity : AppCompatActivity() {
         val progressUpload: ProgressBar = findViewById(R.id.progress_upload_settings)
         val buttonPing: Button = findViewById(R.id.button_ping)
         val textPingResult: TextView = findViewById(R.id.text_ping_result)
-        val buttonRefreshBtDevices: Button = findViewById(R.id.button_refresh_bt_devices)
-        val textBtAudioStatus: TextView = findViewById(R.id.text_bt_audio_status)
-        val textBtDeviceList: TextView = findViewById(R.id.text_bt_device_list)
-        val buttonDisconnectBt: Button = findViewById(R.id.button_disconnect_bt)
-        val buttonStreamToPhone: Button = findViewById(R.id.button_stream_to_phone)
+        val buttonRestart: Button = findViewById(R.id.button_restart_oraclebox)
+        val buttonShutdown: Button = findViewById(R.id.button_shutdown_oraclebox)
 
         buttonBackToModes.setOnClickListener {
             finish()
@@ -108,7 +110,7 @@ class DeviceSettingsActivity : AppCompatActivity() {
         }
 
         buttonRefreshSounds.setOnClickListener {
-            viewModel.refreshSounds()
+            viewModel.refreshSounds("startup")
         }
 
         buttonSetStartup.setOnClickListener {
@@ -146,68 +148,32 @@ class DeviceSettingsActivity : AppCompatActivity() {
             viewModel.pingPi()
         }
 
-        buttonRefreshBtDevices.setOnClickListener {
-            viewModel.refreshBtAudioDevices()
-            viewModel.refreshBtAudioStatus()
-        }
-
-        buttonDisconnectBt.setOnClickListener {
-            viewModel.disconnectBtAudio()
-        }
-
-        buttonStreamToPhone.setOnClickListener {
-            viewModel.streamToPhone()
-            Toast.makeText(this, "Routing audio to this phone...", Toast.LENGTH_SHORT).show()
-        }
-
-        // Observe Bluetooth audio status
-        viewModel.btAudioStatus.observe(this) { status ->
-            if (status == null) {
-                textBtAudioStatus.text = "No Bluetooth audio info"
-            } else {
-                val lines = listOf(
-                    "Output: ${status.currentDevice}",
-                    "BT Connected: ${status.btConnected}",
-                    if (status.btDevice != null) "BT Device: ${status.btDevice}" else "BT Device: None"
-                )
-                textBtAudioStatus.text = lines.joinToString("\n")
-            }
-        }
-
-        // Observe Bluetooth device list
-        viewModel.btAudioDevices.observe(this) { devices ->
-            if (devices.isEmpty()) {
-                textBtDeviceList.text = "No Bluetooth audio devices found"
-            } else {
-                val lines = devices.map { dev ->
-                    "${dev.name}\n${dev.mac}\n${if (dev.connected) "✓ Connected" else "⊗ Not connected"}"
+        buttonRestart.setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Restart OracleBox")
+                .setMessage("Are you sure you want to restart the OracleBox system?")
+                .setPositiveButton("RESTART") { _, _ ->
+                    viewModel.sendCommand("RESTART")
+                    Toast.makeText(this, "Restarting OracleBox...", Toast.LENGTH_LONG).show()
                 }
-                textBtDeviceList.text = lines.joinToString("\n\n")
-                
-                // Make device list clickable
-                textBtDeviceList.setOnClickListener {
-                    showBtDeviceSelectionDialog(devices)
+                .setNegativeButton("CANCEL", null)
+                .show()
+        }
+
+        buttonShutdown.setOnClickListener {
+            androidx.appcompat.app.AlertDialog.Builder(this)
+                .setTitle("Shutdown OracleBox")
+                .setMessage("Are you sure you want to shutdown the OracleBox system?")
+                .setPositiveButton("SHUTDOWN") { _, _ ->
+                    viewModel.sendCommand("SHUTDOWN")
+                    Toast.makeText(this, "Shutting down OracleBox...", Toast.LENGTH_LONG).show()
                 }
-            }
+                .setNegativeButton("CANCEL", null)
+                .show()
         }
 
         // Load initial status for display
         viewModel.refreshStatus()
-        viewModel.refreshBtAudioStatus()
-        viewModel.refreshSounds()
-    }
-
-    private fun showBtDeviceSelectionDialog(devices: List<com.apx.oraclebox.data.BtAudioDevice>) {
-        val deviceNames = devices.map { "${it.name} (${it.mac})" }.toTypedArray()
-        
-        androidx.appcompat.app.AlertDialog.Builder(this)
-            .setTitle("Connect Bluetooth Headphones")
-            .setItems(deviceNames) { _, which ->
-                val selectedDevice = devices[which]
-                viewModel.connectBtAudio(selectedDevice.mac)
-                Toast.makeText(this, "Connecting to ${selectedDevice.name}...", Toast.LENGTH_SHORT).show()
-            }
-            .setNegativeButton("Cancel", null)
-            .show()
+        viewModel.refreshSounds("startup")
     }
 }

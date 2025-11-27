@@ -56,7 +56,8 @@ data class PingStatus(
 data class BtAudioDevice(
     val mac: String,
     val name: String,
-    val connected: Boolean
+    val connected: Boolean,
+    val paired: Boolean = true  // Default true for backward compatibility with LIST command
 )
 
 /**

@@ -12,38 +12,21 @@
     android:paddingBottom="16dp"
     android:paddingTop="32dp">
 
-    <!-- Header with integrated back button -->
+    <!-- Header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:background="@drawable/bg_bakelite_button"
         android:orientation="horizontal"
         android:padding="8dp"
-        android:gravity="center_vertical">
+        android:gravity="center">
 
         <TextView
-            android:layout_width="0dp"
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
             android:text="MODE SELECTION"
             android:textColor="@color/gothic_gold"
             android:textSize="20sp"
-            android:textStyle="bold" />
-
-        <Button
-            android:id="@+id/button_back_to_connection"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:background="@drawable/bg_bakelite_button"
-            android:minHeight="0dp"
-            android:minWidth="0dp"
-            android:paddingLeft="12dp"
-            android:paddingRight="12dp"
-            android:paddingTop="4dp"
-            android:paddingBottom="4dp"
-            android:text="◀ BACK"
-            android:textColor="@color/gothic_gold"
-            android:textSize="10sp"
             android:textStyle="bold" />
 
     </LinearLayout>
@@ -52,32 +35,29 @@
         android:layout_width="match_parent"
         android:layout_height="22dp" />
 
-    <!-- Logo -->
     <ImageView
         android:id="@+id/image_logo_ms"
         android:layout_width="72dp"
         android:layout_height="72dp"
         android:layout_gravity="center_horizontal"
         android:layout_marginTop="16dp"
-        android:contentDescription="OracleBox Logo"
         android:foreground="@mipmap/sqlogo_foreground"
         android:scaleX="2"
         android:scaleY="2" />
 
-    <!-- OracleBox Text -->
     <TextView
-        android:layout_width="match_parent"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:layout_gravity="center_horizontal"
         android:layout_marginTop="8dp"
         android:text="OracleBox"
-        android:textAlignment="center"
         android:textColor="#D7B972"
         android:textSize="18sp"
         android:textStyle="bold" />
 
     <Space
         android:layout_width="match_parent"
-        android:layout_height="22dp" />
+        android:layout_height="8dp" />
 
     <!-- Connection Status Banner -->
     <LinearLayout
@@ -108,7 +88,48 @@
 
     <Space
         android:layout_width="match_parent"
-        android:layout_height="32dp" />
+        android:layout_height="16dp" />
+
+    <!-- Active Sweep Status Banner (hidden when not running) -->
+    <LinearLayout
+        android:id="@+id/layout_sweep_active"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/bg_bakelite_button"
+        android:orientation="horizontal"
+        android:padding="12dp"
+        android:gravity="center_vertical"
+        android:visibility="gone">
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="⚡ Spirit Box Active"
+            android:textColor="#FFD700"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Button
+            android:id="@+id/button_stop_sweep"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:background="@drawable/bg_gothic_bubble"
+            android:minHeight="0dp"
+            android:minWidth="0dp"
+            android:paddingLeft="16dp"
+            android:paddingRight="16dp"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:text="STOP"
+            android:textColor="#FF6B6B"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <Space
+        android:layout_width="match_parent"
+        android:layout_height="8dp" />
 
     <!-- Instruction Text -->
     <TextView
@@ -117,10 +138,10 @@
         android:text="Choose Your Investigation Method"
         android:textAlignment="center"
         android:textColor="@color/ghost_on_surface"
-        android:textSize="16sp"
+        android:textSize="14sp"
         android:textStyle="italic"
         android:fontFamily="serif"
-        android:layout_marginBottom="24dp" />
+        android:layout_marginBottom="8dp" />
 
     <!-- Mode Cards Container -->
     <ScrollView
@@ -140,42 +161,42 @@
                 android:id="@+id/card_spirit_box"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginBottom="16dp"
+                android:layout_marginBottom="8dp"
                 android:background="@drawable/bg_dsilver_bubble"
                 android:clickable="true"
                 android:focusable="true"
                 android:orientation="vertical"
-                android:padding="20dp">
+                android:padding="12dp">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_bakelite_button"
+                    android:background="@drawable/bg_dsilver_bubble_inset"
                     android:letterSpacing="0.05"
                     android:text="SPIRIT BOX"
                     android:textAlignment="center"
                     android:textColor="@color/gothic_gold"
-                    android:textSize="22sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
-                    android:text="Real-time radio frequency sweep\nfor spirit communication through EVP"
+                    android:layout_marginTop="4dp"
+                    android:text="Real-time radio frequency sweep\nfor spirit communication through EVP\nIncludes Estes Method audio routing"
                     android:textAlignment="center"
                     android:textColor="@color/ghost_surface"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="6dp"
                     android:alpha="0.7"
                     android:text="TAP TO ENTER ▶"
                     android:textColor="@color/ic_launcher_background"
-                    android:textSize="10sp"
+                    android:textSize="9sp"
                     android:textStyle="bold" />
             </LinearLayout>
 
@@ -186,39 +207,39 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_dsilver_bubble"
                 android:orientation="vertical"
-                android:padding="20dp"
-                android:layout_marginBottom="16dp"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_bakelite_button"
+                    android:background="@drawable/bg_dsilver_bubble_inset"
                     android:letterSpacing="0.05"
                     android:text="REM POD"
                     android:textAlignment="center"
                     android:textColor="@color/gothic_gold"
-                    android:textSize="22sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="4dp"
                     android:text="Electromagnetic field detection\nwith proximity alerts and visual indicators"
                     android:textAlignment="center"
                     android:textColor="@color/ghost_surface"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="6dp"
                     android:text="TAP TO ENTER ▶"
                     android:textColor="@color/ic_launcher_background"
-                    android:textSize="10sp"
+                    android:textSize="9sp"
                     android:textStyle="bold"
                     android:alpha="0.7" />
             </LinearLayout>
@@ -230,39 +251,39 @@
                 android:layout_height="wrap_content"
                 android:background="@drawable/bg_dsilver_bubble"
                 android:orientation="vertical"
-                android:padding="20dp"
-                android:layout_marginBottom="16dp"
+                android:padding="12dp"
+                android:layout_marginBottom="8dp"
                 android:clickable="true"
                 android:focusable="true">
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:background="@drawable/bg_bakelite_button"
+                    android:background="@drawable/bg_dsilver_bubble_inset"
                     android:letterSpacing="0.05"
                     android:text="MUSIC BOX"
                     android:textAlignment="center"
                     android:textColor="@color/gothic_gold"
-                    android:textSize="22sp"
+                    android:textSize="18sp"
                     android:textStyle="bold" />
 
                 <TextView
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="8dp"
+                    android:layout_marginTop="4dp"
                     android:text="Motion-triggered music box sounds\nfor presence detection and interaction"
                     android:textAlignment="center"
                     android:textColor="@color/ghost_surface"
-                    android:textSize="12sp" />
+                    android:textSize="11sp" />
 
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_gravity="center_horizontal"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="6dp"
                     android:text="TAP TO ENTER ▶"
                     android:textColor="@color/ic_launcher_background"
-                    android:textSize="10sp"
+                    android:textSize="9sp"
                     android:textStyle="bold"
                     android:alpha="0.7" />
             </LinearLayout>
@@ -275,7 +296,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
+        android:layout_marginTop="8dp"
         android:orientation="horizontal">
 
         <Button

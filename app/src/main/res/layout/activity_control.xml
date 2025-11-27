@@ -139,11 +139,12 @@
                         android:id="@+id/text_running"
                         android:layout_width="match_parent"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_dsilver_bubble_inset"
                         android:ellipsize="end"
                         android:gravity="center_horizontal"
                         android:singleLine="true"
                         android:text="⏵"
-                        android:textColor="@color/ic_launcher_background"
+                        android:textColor="@color/ghost_on_background"
                         android:textSize="16sp" />
                 </LinearLayout>
 
@@ -170,9 +171,10 @@
                         android:id="@+id/text_direction"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_dsilver_bubble_inset"
                         android:text="⏵⏵"
-                        android:textColor="@color/ic_launcher_background"
-                        android:textSize="18sp" />
+                        android:textColor="@color/ghost_on_background"
+                        android:textSize="16sp" />
                 </LinearLayout>
 
                 <!-- Speed card -->
@@ -198,8 +200,9 @@
                         android:id="@+id/text_speed"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_dsilver_bubble_inset"
                         android:text="000"
-                        android:textColor="@color/ic_launcher_background"
+                        android:textColor="@color/ghost_on_background"
                         android:textStyle="bold" />
                 </LinearLayout>
 
@@ -226,8 +229,9 @@
                         android:id="@+id/text_sweep_led"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_dsilver_bubble_inset"
                         android:text="Mode"
-                        android:textColor="@color/ic_launcher_background" />
+                        android:textColor="@color/ghost_on_background" />
                 </LinearLayout>
 
                 <!-- Box LED mode card -->
@@ -253,8 +257,9 @@
                         android:id="@+id/text_box_led"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
+                        android:background="@drawable/bg_dsilver_bubble_inset"
                         android:text="Mode"
-                        android:textColor="@color/ic_launcher_background" />
+                        android:textColor="@color/ghost_on_background" />
                 </LinearLayout>
             </LinearLayout>
 
@@ -413,10 +418,73 @@
                     android:backgroundTint="@null" />
             </LinearLayout>
 
-            <!-- LED CONTROLS -->
+            <!-- ESTES METHOD -->
             <Space
                 android:layout_width="match_parent"
                 android:layout_height="22dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/bg_gothic_bubble"
+                android:text="Estes Method (Private Audio)"
+                android:textColor="@color/ghost_on_surface"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/text_bt_audio_status_sb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingTop="8dp"
+                android:text="Output: Pi Speaker"
+                android:textColor="@color/gothic_gold"
+                android:textStyle="bold" />
+
+            <Button
+                android:id="@+id/button_refresh_bt_devices_sb"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="SCAN FOR NEARBY HEADPHONES"
+                android:backgroundTint="@color/gothic_gold"
+                android:textColor="@color/black"
+                android:textStyle="bold"
+                android:layout_marginTop="6dp"/>
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Available Headphones (tap to pair/connect):"
+                android:textColor="@color/ghost_on_surface"
+                android:paddingTop="8dp"
+                android:id="@+id/label_bt_devices_sb"
+                android:visibility="gone"/>
+
+            <TextView
+                android:id="@+id/text_bt_device_list_sb"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="@color/ic_launcher_background"
+                android:paddingTop="4dp"
+                android:background="@drawable/bg_log_window"
+                android:padding="8dp"
+                android:minHeight="60dp"
+                android:visibility="gone"
+                android:text="Scanning..."/>
+
+            <Button
+                android:id="@+id/button_disconnect_bt_sb"
+                style="@style/OracleBox.BakeliteButton"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="SWITCH TO PI SPEAKER"
+                android:backgroundTint="@null"
+                android:layout_marginTop="6dp"/>
+
+            <!-- LED CONTROLS -->
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="7dp" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -555,29 +623,21 @@
                 android:layout_width="match_parent"
                 android:layout_height="22dp" />
 
-            <TextView
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/bg_gothic_bubble"
-                android:text="Audio FX &amp; Mixer"
-                android:textColor="@color/ghost_on_surface"
-                android:textStyle="bold" />
-
             <!-- FX Enabled Switch -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_marginTop="16dp"
+                android:background="@drawable/bg_gothic_bubble"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
 
                 <TextView
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
-                    android:text="FX Enabled"
-                    android:textColor="@color/ghost_on_surface"
+                    android:text="Audio FX &amp; Mixer"
+                    android:textColor="@color/white"
                     android:textSize="14sp" />
 
                 <Switch
@@ -586,40 +646,21 @@
                     android:layout_height="wrap_content" />
             </LinearLayout>
 
-            <!-- Current Preset Display -->
-            <LinearLayout
+            <Space
                 android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:orientation="horizontal"
-                android:gravity="center_vertical">
+                android:layout_height="22dp" />
 
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:text="Current Preset:"
-                    android:textColor="@color/ghost_on_surface"
-                    android:textSize="12sp" />
-
-                <TextView
-                    android:id="@+id/text_current_preset"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:text="SB7_CLASSIC"
-                    android:textColor="@color/ghost_sweep_yellow"
-                    android:textSize="14sp"
-                    android:textStyle="bold" />
-            </LinearLayout>
+            <!-- Current Preset Display -->
 
             <!-- Mode Selector Buttons -->
+
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
                 android:orientation="horizontal"
                 android:gravity="center">
-                
+
                 <Button
                     android:id="@+id/button_mode_fm"
                     style="@style/OracleBox.BakeliteButton"
@@ -630,7 +671,7 @@
                     android:backgroundTint="@null"
                     android:text="FM Mode"
                     android:textSize="11sp" />
-                
+
                 <Button
                     android:id="@+id/button_mode_sb7"
                     style="@style/OracleBox.BakeliteButton"
@@ -642,8 +683,41 @@
                     android:text="SB7 Mode"
                     android:textSize="11sp" />
             </LinearLayout>
-            
+
             <!-- Save Custom Preset Button -->
+
+            <!-- FX Sliders -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="8dp"
+                android:background="@drawable/bg_dsilver_bubble"
+                android:gravity="center_vertical"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Current Preset:"
+                    android:textColor="@color/black"
+                    android:textSize="12sp" />
+
+                <TextView
+                    android:id="@+id/text_current_preset"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:background="@drawable/bg_dsilver_bubble_inset"
+                    android:text="SB7_CLASSIC"
+                    android:textColor="@color/ghost_on_background"
+                    android:textSize="14sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <Space
+                android:layout_width="match_parent"
+                android:layout_height="22dp" />
+
             <Button
                 android:id="@+id/button_save_preset"
                 style="@style/OracleBox.BakeliteButton"
@@ -654,14 +728,27 @@
                 android:text="Save Custom Preset..."
                 android:textSize="12sp" />
 
-            <!-- FX Sliders -->
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="8dp"
-                android:text="Bandpass Low (Hz)"
-                android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Bandpass Low (Hz)"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_bp_low_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="500 Hz"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_bp_low"
@@ -673,10 +760,33 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Bandpass High (Hz)"
+                android:text="Filters out low rumble and bass. Higher = crisper but thinner sound."
                 android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:textSize="10sp"
+                android:alpha="0.7"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Bandpass High (Hz)"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_bp_high_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="2600 Hz"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_bp_high"
@@ -688,10 +798,33 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Contrast"
+                android:text="Filters out high hiss and noise. Lower = warmer, less harsh sound."
                 android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:textSize="10sp"
+                android:alpha="0.7"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Contrast"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_contrast_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="25"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_contrast"
@@ -703,10 +836,33 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Reverb Level"
+                android:text="Sharpens audio by enhancing volume differences. Higher = more dramatic."
                 android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:textSize="10sp"
+                android:alpha="0.7"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Reverb Level"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_reverb_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="35"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_reverb"
@@ -718,10 +874,33 @@
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="4dp"
-                android:text="Output Gain (dB)"
+                android:text="Adds echo/room ambience. Higher = more spacious, ghostly atmosphere."
                 android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:textSize="10sp"
+                android:alpha="0.7"
+                android:layout_marginBottom="8dp" />
+
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="4dp"
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Output Gain (dB)"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_gain_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="0 dB"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_gain"
@@ -730,23 +909,47 @@
                 android:max="24"
                 android:progress="12" />
 
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Final output volume boost/cut. Positive = louder, negative = quieter."
+                android:textColor="@color/ghost_on_surface"
+                android:textSize="10sp"
+                android:alpha="0.7"
+                android:layout_marginBottom="8dp" />
+
             <!-- Mixer Section Header -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="12dp"
+                android:background="@drawable/bg_gothic_bubble"
                 android:text="Mixer Controls"
                 android:textColor="@color/ghost_on_surface"
                 android:textSize="14sp"
                 android:textStyle="bold" />
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Speaker Volume (0–37)"
-                android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Speaker Volume"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_speaker_volume_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="20"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_speaker_volume"
@@ -755,13 +958,27 @@
                 android:max="37"
                 android:progress="14" />
 
-            <TextView
+            <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:layout_marginTop="4dp"
-                android:text="Mic Capture Volume (0–35)"
-                android:textColor="@color/ghost_on_surface"
-                android:textSize="12sp" />
+                android:orientation="horizontal">
+                <TextView
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="Mic Capture Volume"
+                    android:textColor="@color/ghost_on_surface"
+                    android:textSize="12sp" />
+                <TextView
+                    android:id="@+id/text_mic_volume_value"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="15"
+                    android:textColor="@color/gothic_gold"
+                    android:textSize="12sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
 
             <SeekBar
                 android:id="@+id/slider_mic_volume"

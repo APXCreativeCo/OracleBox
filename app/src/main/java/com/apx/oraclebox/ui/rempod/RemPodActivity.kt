@@ -51,7 +51,7 @@ class RemPodActivity : AppCompatActivity() {
 
     private fun showDevelopmentNotice() {
         android.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ Development Notice")
+            .setTitle("Development Notice")
             .setMessage("The REM Pod feature is currently in development.\n\nSome features may not be fully functional yet. We're working hard to bring you the complete paranormal detection experience!")
             .setPositiveButton("Got It") { dialog, _ ->
                 dialog.dismiss()
@@ -75,16 +75,16 @@ class RemPodActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        // Sound list observer - simplified for now
+        // Buzzer tone selection
         val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
-            listOf("default.wav", "tone1.wav", "tone2.wav")
+            listOf("Standard (2000Hz)", "High (2500Hz)", "Low (1500Hz)", "Alert (3000Hz)")
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerRempodSounds.adapter = adapter
         
-        textCurrentRempodSound.text = "default.wav"
+        textCurrentRempodSound.text = "Standard (2000Hz)"
 
         // Log observer for trigger events
         viewModel.logs.observe(this) { logs ->
@@ -138,18 +138,25 @@ class RemPodActivity : AppCompatActivity() {
         }
 
         buttonSetRempodSound.setOnClickListener {
-            val selectedSound = spinnerRempodSounds.selectedItem?.toString()
-            if (selectedSound != null) {
-                textCurrentRempodSound.text = selectedSound
-                Toast.makeText(this, "REM Pod sound set to: $selectedSound", Toast.LENGTH_SHORT).show()
+            val selectedTone = spinnerRempodSounds.selectedItem?.toString()
+            if (selectedTone != null) {
+                val frequency = when(selectedTone) {
+                    "High (2500Hz)" -> 2500
+                    "Low (1500Hz)" -> 1500
+                    "Alert (3000Hz)" -> 3000
+                    else -> 2000
+                }
+                viewModel.sendCommand("REMPOD TONE $frequency")
+                textCurrentRempodSound.text = selectedTone
+                Toast.makeText(this, "REM Pod buzzer tone set to: $selectedTone", Toast.LENGTH_SHORT).show()
             }
         }
 
         buttonTestRempodSound.setOnClickListener {
-            val selectedSound = spinnerRempodSounds.selectedItem?.toString()
-            if (selectedSound != null) {
-                viewModel.playSound(selectedSound)
-                Toast.makeText(this, "Testing sound...", Toast.LENGTH_SHORT).show()
+            val selectedTone = spinnerRempodSounds.selectedItem?.toString()
+            if (selectedTone != null) {
+                viewModel.sendCommand("REMPOD TEST")
+                Toast.makeText(this, "Testing buzzer tone...", Toast.LENGTH_SHORT).show()
             }
         }
     }

@@ -1,0 +1,7 @@
+# Ignore firmware and pi directories from Android build
+firmware/
+pi/
+
+# But keep them in git (this .gitignore is for build system only)
+!firmware/**
+!pi/**

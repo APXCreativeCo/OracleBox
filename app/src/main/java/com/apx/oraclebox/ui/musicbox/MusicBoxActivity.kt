@@ -68,7 +68,7 @@ class MusicBoxActivity : AppCompatActivity() {
 
     private fun showDevelopmentNotice() {
         android.app.AlertDialog.Builder(this)
-            .setTitle("⚠️ Development Notice")
+            .setTitle("Development Notice")
             .setMessage("The Music Box feature is currently in development.\n\nSome features may not be fully functional yet. We're working hard to bring you the complete spirit interaction experience!")
             .setPositiveButton("Got It") { dialog, _ ->
                 dialog.dismiss()
@@ -96,16 +96,16 @@ class MusicBoxActivity : AppCompatActivity() {
     }
 
     private fun setupObservers() {
-        // Sound list - simplified for now
+        // Melody selection (passive buzzer melodies)
         val adapter = ArrayAdapter(
             this,
             android.R.layout.simple_spinner_item,
-            listOf("default.wav", "music1.wav", "music2.wav")
+            listOf("Twinkle Star", "Lullaby", "Carousel")
         )
         adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
         spinnerMusicboxSounds.adapter = adapter
         
-        textCurrentMusicboxSound.text = "default.wav"
+        textCurrentMusicboxSound.text = "Twinkle Star"
         progressUploadMb.visibility = android.view.View.GONE
 
         // Log observer for music box events
@@ -166,27 +166,33 @@ class MusicBoxActivity : AppCompatActivity() {
         }
 
         buttonSetMusicboxSound.setOnClickListener {
-            val selectedSound = spinnerMusicboxSounds.selectedItem?.toString()
-            if (selectedSound != null) {
-                textCurrentMusicboxSound.text = selectedSound
-                Toast.makeText(this, "Music Box sound set to: $selectedSound", Toast.LENGTH_SHORT).show()
+            val selectedMelody = spinnerMusicboxSounds.selectedItem?.toString()
+            if (selectedMelody != null) {
+                val melodyCode = when(selectedMelody) {
+                    "Lullaby" -> "lullaby"
+                    "Carousel" -> "carousel"
+                    else -> "twinkle_star"
+                }
+                viewModel.sendCommand("MUSICBOX MELODY $melodyCode")
+                textCurrentMusicboxSound.text = selectedMelody
+                Toast.makeText(this, "Music Box melody set to: $selectedMelody", Toast.LENGTH_SHORT).show()
             }
         }
 
         buttonTestMusicboxSound.setOnClickListener {
-            val selectedSound = spinnerMusicboxSounds.selectedItem?.toString()
-            if (selectedSound != null) {
-                viewModel.playSound(selectedSound)
-                Toast.makeText(this, "Testing sound...", Toast.LENGTH_SHORT).show()
+            val selectedMelody = spinnerMusicboxSounds.selectedItem?.toString()
+            if (selectedMelody != null) {
+                viewModel.sendCommand("MUSICBOX PLAY")
+                Toast.makeText(this, "Testing melody: $selectedMelody...", Toast.LENGTH_SHORT).show()
             }
         }
 
         buttonUploadMusicboxSound.setOnClickListener {
-            pickSoundLauncher.launch("audio/*")
+            Toast.makeText(this, "Music Box uses built-in buzzer melodies", Toast.LENGTH_SHORT).show()
         }
 
         buttonRefreshMusicboxSounds.setOnClickListener {
-            Toast.makeText(this, "Refreshing sound list...", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Melody list is built into firmware", Toast.LENGTH_SHORT).show()
         }
     }
 

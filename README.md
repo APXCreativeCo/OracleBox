@@ -1,15 +1,53 @@
-# OracleBox Android Controller
+# OracleBox Ghost Hunting Hub
 
-Android app to control a Raspberry Pi-based paranormal investigation device (OracleBox) over classic Bluetooth SPP.
+Android app to control a complete wireless paranormal investigation system built around a Raspberry Pi hub with ESP32-based satellite sensors.
 
 ## System Architecture
 
-- **Raspberry Pi hardware** drives the TEA5767 FM tuner via I2C (`/dev/i2c-1`, addr `0x60`), animates the Sweep LED on GPIO 17 and Box LED on GPIO 27, and exposes a Bluetooth RFCOMM service.
-- **`oraclebox_merged.py` daemon** runs on the Pi: handles sweeping, LED animations, sound playback (including voice announcements), and the Bluetooth command server the Android app talks to.
-- **Android controller** (this app) issues textual commands over classic Bluetooth (`STATUS`, `LED`, `SOUND`, etc.) and provides a voice-guided, vintage radio-themed UI for investigation modes.
-- **Audio path (current)** routes straight from the TEA5767 to an amp; future builds will loop through a USB audio interface for filtering/effects.
+### OracleBox Hub (Raspberry Pi)
+- **TEA5767 FM tuner** via I2C (`/dev/i2c-1`, addr `0x60`) for Spirit Box/SB7 sweep mode
+- **GPIO-controlled LEDs**: Sweep LED (GPIO 17) and Box LED (GPIO 27) with multiple animation modes
+- **Audio processing**: Real-time FX pipeline (bandpass filters, contrast, reverb, gain) via USB audio interface
+- **WiFi Access Point**: Creates isolated hotspot for satellite device mesh network (no internet required)
+- **Bluetooth RFCOMM**: Classic Bluetooth SPP for Android app control
+- **Voice announcements**: Text-to-speech with vintage radio effects for investigation guidance
+- **Event logging**: Captures and timestamps all sensor triggers from satellite devices
 
-## Python Daemon (`oraclebox_merged.py`)
+### Satellite Devices (ESP32-based)
+The OracleBox acts as the "brain" coordinating wireless "sensor" devices that connect to its WiFi hotspot:
+
+**REM-Pod Satellite**
+- ESP32 microcontroller with WiFi
+- SparkFun AT42QT1011 capacitive sensor (real REM-Pod EM field detection)
+- Telescopic antenna for field sensitivity
+- BMP280 sensor for temperature deviation alerts
+- Active buzzer + LED indicators
+- Battery powered for portable placement
+- Transmits: EM field hits, strength levels (0-10), temperature anomalies
+
+**Music Box Satellite**
+- ESP32 microcontroller with WiFi
+- AM312 PIR motion sensor
+- Passive buzzer plays creepy chime melodies on trigger
+- Battery powered for portable placement
+- Transmits: Motion detection events with timestamps
+
+### Android Controller (This App)
+- Issues textual commands over classic Bluetooth (`STATUS`, `LED`, `SOUND`, `FX`, etc.)
+- Voice-guided, vintage radio-themed UI for investigation modes
+- Real-time monitoring of satellite sensor network
+- Displays EM field graphs, motion events, and temperature deviations
+- Voiced alerts: *"REM-Pod trigger — strength 3"* or *"Music Box activated in hallway"*
+
+### Communication Flow
+```
+Android App <--Bluetooth--> Raspberry Pi Hub <--WiFi Mesh--> ESP32 Satellites
+                            (OracleBox)            (REM-Pod, Music Box)
+```
+
+The Pi creates a WiFi hotspot, satellites connect directly — no router or internet needed. Perfect for investigating remote locations.
+
+## Python Daemon (`oraclebox.py`)
 
 - Loads persisted state + LED presets from JSON (see `OracleBoxState`).
 - Initializes hardware (I2C tuner, gpiozero LEDs), optionally plays a startup sound, and launches a sweep thread.
@@ -34,7 +72,10 @@ Persisted fields (written to `config.json`):
 ### Core Functionality
 - **Auto-Connect**: Automatically connects to saved OracleBox device on app launch with animated loading screen
 - **Voice-Guided Navigation**: System announces mode selection and navigation with vintage radio-style voice effects
-- **Multiple Investigation Modes**: Spirit Box, REM Pod (dev), Music Box (dev) accessible from central hub
+- **Wireless Sensor Network**: Monitor ESP32 satellite devices (REM-Pod, Music Box) via Pi WiFi mesh
+- **Voice Alerts**: Spoken notifications for sensor triggers - *"REM-Pod trigger — strength 3"* or *"Music Box activated in hallway"*
+- **Multiple Investigation Modes**: Spirit Box, REM Pod monitoring, Music Box monitoring accessible from central hub
+- **Event Logging**: Unified timeline of all sensor activity across Spirit Box and satellite devices
 - **Vintage Themed UI**: Uniform design across all pages with wood backgrounds, gothic gold accents, and consistent layouts
 
 ### Bluetooth Control
@@ -49,6 +90,13 @@ Persisted fields (written to `config.json`):
 - Adjust sweep direction (up/down frequency)
 - Real-time status cards showing current state
 - Control Sweep and Box LEDs (on/off/breath/breath_fast/heartbeat/strobe/flicker/random_burst/sweep)
+- **FX Controls with Real-Time Feedback**: All sliders display current values in gold text
+  - **Bandpass Filters**: Low (200-1000 Hz) and High (2000-4000 Hz) with live Hz display
+  - **Contrast**: Audio sharpening (0-50) for enhanced clarity
+  - **Reverb**: Spacious echo effect (0-60) for ghostly atmosphere
+  - **Output Gain**: Final volume boost/cut (-12 to +12 dB)
+  - **Educational Descriptions**: Each slider includes plain-English explanation of its effect
+- **Mixer Controls**: Speaker and microphone volume with real-time value displays
 
 ### Device Settings
 - Upload, play, and manage startup sounds
@@ -84,9 +132,9 @@ From the project root:
 ./gradlew installDebug         # installs on connected device
 ```
 
-## Pi Setup (oraclebox_merged.py)
+## Pi Setup (oraclebox.py)
 
-1. Copy `oraclebox_merged.py` to your Raspberry Pi at `/home/dylan/oraclebox/`.
+1. Copy `oraclebox.py` to your Raspberry Pi at `/home/dylan/oraclebox/`.
 2. Create directory structure:
    ```bash
    mkdir -p /home/dylan/oraclebox/announcements
@@ -165,7 +213,7 @@ Parameters: low pitch (5), slow speed (70 wpm), dual echo layers, 70% reverb, +1
 
 ### Connection Issues
 - **Device not found**: Confirm Pi is paired in Android Bluetooth settings
-- **Connection fails**: Verify `oraclebox_merged.py` is running on Pi with correct UUID
+- **Connection fails**: Verify `oraclebox.py` is running on Pi with correct UUID
 - **Auto-connect not working**: Check if device MAC address is saved (disconnect/reconnect once)
 - **Connection drops**: Ensure Pi Bluetooth service is stable, check system logs
 
@@ -177,42 +225,27 @@ Parameters: low pitch (5), slow speed (70 wpm), dual echo layers, 70% reverb, +1
 ### UI Issues
 - **Logo not displaying**: Verify `@mipmap/sqlogo_foreground` resource exists
 - **Back button not working**: Check activity launch modes and transition animations
-- **Controls hidden after start**: This is intentional - press START button to show controls
-
-## Current Audio System
-
-### ✅ Implemented Audio Pipeline
-- **USB Audio Interface**: TEA5767 FM audio routed through USB sound card (plughw:3,0)
-- **Dual Audio Modes**:
-  - **FX OFF**: Raw FM passthrough (arecord → aplay) with live sweep audio
-  - **FX ON**: Processed audio with SoX effects chain (band-pass 500-2600Hz, reverb, contrast, gain)
-- **TEA5767 Configuration**: Unmuted audio output with high-side injection and stereo mode
-- **Seamless Switching**: Toggle between raw and processed audio without interruption
-
-### Audio Flow
-```
-TEA5767 FM Tuner (I2C 0x60)
-    ↓ (analog L/R audio)
-USB Sound Card Input (plughw:3,0)
-    ↓
-[FX OFF] → Direct Passthrough → Speakers
-[FX ON]  → SoX Effects Chain → Speakers
-```
+- **Button state bugs**: Fixed - buttons now sync with device state via observer pattern (no manual toggling)
+- **Slider values not visible**: Fixed - all sliders show real-time values in gold text with proper units
 
 ## Future Plans
 
-### Audio Enhancements
-- Expand band-pass filtering range (600-3500 Hz configurable)
-- Add adjustable portal-style reverb/chorus presets
-- Accept external sweep sources (SB7 headphone out) as input for processing
+### Audio Pipeline
 - Add real-time audio visualization in app
-- Implement audio recording with FX chain
 
-### Investigation Modes
-- **REM Pod Mode**: Complete implementation with EMF detection visualization
-- **Music Box Mode**: Complete implementation with trigger detection
-- Add EVP analysis mode with waveform display
-- Implement session timeline with marked events
+### Investigation Modes & Satellite Integration
+- **REM Pod Mode**: Real-time EM field strength visualization from ESP32 satellite
+  - Graph display of field strength (0-10 scale)
+  - Temperature deviation alerts from BMP280 sensor
+  - Voice announcements for trigger events with strength levels
+  - Multiple REM-Pod support with location labels
+- **Music Box Mode**: Motion detection monitoring from ESP32 satellite
+  - Event timeline showing trigger timestamps and locations
+  - Visual indicator when chime melody is playing
+  - Voice announcements for motion events
+  - Multiple Music Box support for multi-room coverage
+- **EVP Analysis Mode**: Waveform display and playback tools
+- **Session Timeline**: Unified view of all sensor events (Spirit Box, REM-Pod, Music Box) with timestamps and annotations
 
 ### Recording & Analysis
 - Session recording: `RECORD START/STOP/STATUS` commands
@@ -222,22 +255,61 @@ USB Sound Card Input (plughw:3,0)
 - Export sessions with metadata
 
 ### UI Enhancements
-- Effects stack controls once Pi audio pipeline is ready
+- ~~Effects stack controls once Pi audio pipeline is ready~~ **✅ COMPLETED**: FX controls with real-time value displays and descriptions
+- FFT spectrum visualizer above FX sliders for live audio frequency display
 - Preset management for LED patterns and sweep configurations
 - Custom color themes and layout options
 - Investigation session history viewer
 - Multi-device support (connect to multiple OracleBoxes)
 
 ### Hardware Integration
-- Support for additional sensors (temperature, humidity, barometric pressure)
-- External trigger inputs (motion sensors, laser grids)
-- Integration with other paranormal investigation equipment
-- Wireless mesh networking for multi-room investigations
+- **ESP32 Satellite Network**: WiFi mesh with OracleBox as hub/access point
+  - REM-Pod satellites with AT42QT1011 EM field sensors + BMP280 temperature
+  - Music Box satellites with AM312 PIR motion sensors + chime melodies
+  - Battery-powered for flexible placement in investigation areas
+  - Auto-reconnect and health monitoring
+- **Additional Sensor Support**:
+  - Humidity sensors for environmental correlation
+  - Laser grid triggers for motion detection
+  - EMF meters (Gauss readings)
+  - Geiger counter integration for radiation monitoring
+- **Expandable Satellite Types**:
+  - EVP recorders (distributed audio capture)
+  - Static electricity detectors
+  - Laser thermometers (temperature grid)
+  - Vibration sensors (footstep detection)
 
 ## Documentation
 
 - **APP_REVIEW_SUMMARY.md**: Complete layout and code review
 - **ANDROID_PRESET_IMPLEMENTATION.md**: Preset system documentation
+- **BLUETOOTH_ARCHITECTURE.md**: Bluetooth communication architecture and command protocol
 - **FM_AUDIO_FIX_SUMMARY.md**: Audio pipeline fixes and improvements
 - **FX_PRESET_SYSTEM.md**: Effects preset system documentation
 - **VOICE_ANNOUNCEMENTS_NEEDED.md**: Voice system requirements and generation process
+
+## Recent Updates (November 2025)
+
+### System Architecture Evolution
+Expanded from standalone Spirit Box to **complete wireless paranormal sensor network**:
+- OracleBox Pi now acts as investigation hub with WiFi access point
+- ESP32 satellite devices connect directly to Pi hotspot (no internet/router needed)
+- Wireless mesh supports REM-Pod and Music Box satellites (more planned)
+- Unified event logging and voice announcements for all sensor triggers
+
+### UI/UX Improvements (Commit bab4084)
+- **Button State Synchronization**: Fixed START/STOP/MUTE buttons to rely on status observer instead of manual toggling
+- **Real-Time Value Displays**: All FX and mixer sliders now show current values in gold text with proper formatting
+  - Bandpass filters display Hz values (200-1000 Hz low, 2000-4000 Hz high)
+  - Gain displays dB with +/- sign (-12 to +12 dB)
+  - Contrast, Reverb, and Volume display raw numeric values
+- **Educational Descriptions**: Added plain-English explanations below each FX slider
+- **Visual Depth**: Created `bg_dsilver_bubble_inset.xml` for recessed/sunken UI elements
+- **Ghostly Animations**: Added `ghostly_flicker.xml` animation for supernatural atmosphere
+- **Button Press Effects**: Created `bg_bakelite_button_pressed.xml` for tactile feedback
+
+### Hardware Development Roadmap
+**Phase 1 (Current)**: Spirit Box core with FX controls and LED animations  
+**Phase 2 (In Progress)**: WiFi mesh network + REM-Pod satellite prototype  
+**Phase 3 (Planned)**: Music Box satellite + multi-device support in app  
+**Phase 4 (Future)**: EVP analysis, session recording, expandable satellite types

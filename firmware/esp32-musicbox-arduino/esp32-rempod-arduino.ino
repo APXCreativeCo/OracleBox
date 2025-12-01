@@ -356,9 +356,10 @@ void loop() {
     static unsigned long lastHeartbeat = 0;
     if (millis() - lastHeartbeat > 2000) {
       lastHeartbeat = millis();
-      setLED(5, 30, 0, 0);  // Dim red pulse
-      delay(100);
-      setLED(5, 10, 0, 10);  // Back to dim purple
+        setLED(5, 30, 0, 0);  // brighter red pulse
+        delay(100);
+        setLED(5, 20, 0, 0);  // back to dim red
+
     }
   }
   
@@ -679,12 +680,12 @@ void setAllLEDs(int r, int g, int b) {
 }
 
 void armedState() {
-  // Armed/idle state: center LED dim purple, outer LEDs off
+  // Armed/idle state: center LED dim red, outer LEDs off
   setLED(1, 0, 0, 0);
   setLED(2, 0, 0, 0);
   setLED(3, 0, 0, 0);
   setLED(4, 0, 0, 0);
-  setLED(5, 10, 0, 10);  // Dim purple
+  setLED(5, 20, 0, 0);  // Dim red
 }
 
 // ==================== WIFI CONNECTION ====================

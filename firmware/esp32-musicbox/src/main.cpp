@@ -4,11 +4,12 @@
 #include "config.h"
 #include "melodies.h"
 
-// Pin Definitions
-const int PIR_PIN = 35;           // AM312 PIR motion sensor
-const int BUZZER_PIN = 27;        // Passive buzzer (PWM)
-const int LED_STATUS = 2;         // Built-in LED (status)
-const int LED_TRIGGER = 26;       // External LED (trigger indicator)
+// Pin Definitions (Music Box - Finalized Hardware)
+const int PIR_PIN = 4;            // AM312 PIR motion sensor OUTPUT
+const int BUZZER_PIN = 27;        // Passive buzzer (tone output)
+const int RGB_LED_RED = 14;       // RGB LED - RED pin
+const int RGB_LED_GREEN = 26;     // RGB LED - GREEN pin
+const int RGB_LED_BLUE = 25;      // RGB LED - BLUE pin
 
 // State Variables
 WiFiClient client;
@@ -22,7 +23,6 @@ void connectWiFi();
 void checkMotion();
 void playMelody();
 void sendEventToHub(const char* event, const char* melody, int duration);
-void blinkLED(int pin, int times, int delayMs);
 int readBattery();
 
 void setup() {
@@ -32,14 +32,17 @@ void setup() {
   // Pin Setup
   pinMode(PIR_PIN, INPUT);
   pinMode(BUZZER_PIN, OUTPUT);
-  pinMode(LED_STATUS, OUTPUT);
-  pinMode(LED_TRIGGER, OUTPUT);
+  pinMode(RGB_LED_RED, OUTPUT);
+  pinMode(RGB_LED_GREEN, OUTPUT);
+  pinMode(RGB_LED_BLUE, OUTPUT);
   
-  // Initial LED pattern - startup
+  // Initial LED pattern - startup (cyan pulse: green + blue)
   for(int i = 0; i < 3; i++) {
-    digitalWrite(LED_STATUS, HIGH);
+    digitalWrite(RGB_LED_GREEN, HIGH);
+    digitalWrite(RGB_LED_BLUE, HIGH);
     delay(100);
-    digitalWrite(LED_STATUS, LOW);
+    digitalWrite(RGB_LED_GREEN, LOW);
+    digitalWrite(RGB_LED_BLUE, LOW);
     delay(100);
   }
   
@@ -56,20 +59,12 @@ void setup() {
 }
 
 void loop() {
-  // Check WiFi connection
-  if (WiFi.status() != WL_CONNECTED) {
-    digitalWrite(LED_STATUS, LOW);
-    Serial.println("[WARN] WiFi disconnected, reconnecting...");
-    connectWiFi();
-    return;
-  }
-  
-  // Status LED heartbeat
+  // Status LED heartbeat (dim green pulse - always active)
   static unsigned long lastHeartbeat = 0;
   if (millis() - lastHeartbeat > 2000) {
-    digitalWrite(LED_STATUS, HIGH);
+    digitalWrite(RGB_LED_GREEN, HIGH);
     delay(50);
-    digitalWrite(LED_STATUS, LOW);
+    digitalWrite(RGB_LED_GREEN, LOW);
     lastHeartbeat = millis();
   }
   
@@ -100,8 +95,8 @@ void connectWiFi() {
   WiFi.begin(WIFI_SSID, WIFI_PASSWORD);
   
   int attempts = 0;
-  while (WiFi.status() != WL_CONNECTED && attempts < 20) {
-    delay(500);
+  while (WiFi.status() != WL_CONNECTED && attempts < 10) {
+    delay(300);
     Serial.print(".");
     attempts++;
   }
@@ -110,12 +105,17 @@ void connectWiFi() {
     Serial.println("\n[OK] WiFi connected");
     Serial.print("IP: ");
     Serial.println(WiFi.localIP());
-    digitalWrite(LED_STATUS, HIGH);
-    delay(1000);
-    digitalWrite(LED_STATUS, LOW);
+    digitalWrite(RGB_LED_GREEN, HIGH);
+    delay(500);
+    digitalWrite(RGB_LED_GREEN, LOW);
   } else {
-    Serial.println("\n[ERROR] WiFi connection failed");
-    blinkLED(LED_STATUS, 5, 200);
+    Serial.println("\n[WARN] WiFi unavailable - operating standalone");
+    // Brief yellow flash (red+green) to indicate standalone mode
+    digitalWrite(RGB_LED_RED, HIGH);
+    digitalWrite(RGB_LED_GREEN, HIGH);
+    delay(300);
+    digitalWrite(RGB_LED_RED, LOW);
+    digitalWrite(RGB_LED_GREEN, LOW);
   }
 }
 
@@ -129,10 +129,7 @@ void checkMotion() {
     
     Serial.println("[!] MOTION DETECTED");
     
-    // Visual feedback
-    digitalWrite(LED_TRIGGER, HIGH);
-    
-    // Play melody
+    // Play melody with RGB cycling
     unsigned long startTime = millis();
     playMelody();
     unsigned long duration = millis() - startTime;
@@ -140,8 +137,10 @@ void checkMotion() {
     // Send event to hub
     sendEventToHub("motion_detected", MELODY, duration);
     
-    // Turn off trigger LED
-    digitalWrite(LED_TRIGGER, LOW);
+    // Turn off all LEDs after melody
+    digitalWrite(RGB_LED_RED, LOW);
+    digitalWrite(RGB_LED_GREEN, LOW);
+    digitalWrite(RGB_LED_BLUE, LOW);
     
     motionDetected = false;
   }
@@ -171,17 +170,40 @@ void playMelody() {
   Serial.print("[*] Playing melody: ");
   Serial.println(MELODY);
   
+  // Start RGB fade thread while playing melody
+  unsigned long fadeStartTime = millis();
+  
   // Play each note
   for (int i = 0; i < length; i++) {
+    // Play note
     tone(BUZZER_PIN, notes[i], durations[i]);
-    delay(durations[i] * 1.1); // Small gap between notes
+    
+    // Smooth RGB fade during note duration
+    int steps = durations[i] / 20; // 20ms per step for smooth transition
+    for (int step = 0; step < steps; step++) {
+      // Calculate RGB values for smooth rainbow cycle
+      unsigned long elapsed = millis() - fadeStartTime;
+      float phase = (elapsed % 3000) / 3000.0; // 3 second full cycle
+      
+      int r = (sin(phase * 6.283) * 127) + 128;
+      int g = (sin((phase + 0.33) * 6.283) * 127) + 128;
+      int b = (sin((phase + 0.67) * 6.283) * 127) + 128;
+      
+      analogWrite(RGB_LED_RED, r);
+      analogWrite(RGB_LED_GREEN, g);
+      analogWrite(RGB_LED_BLUE, b);
+      
+      delay(20);
+    }
+    
     noTone(BUZZER_PIN);
+    delay(durations[i] * 0.1); // Small gap between notes
   }
 }
 
 void sendEventToHub(const char* event, const char* melody, int duration) {
   if (WiFi.status() != WL_CONNECTED) {
-    Serial.println("[WARN] Cannot send event - no WiFi");
+    Serial.println("[INFO] Hub offline - event logged locally only");
     return;
   }
   
@@ -189,8 +211,7 @@ void sendEventToHub(const char* event, const char* melody, int duration) {
   Serial.println(event);
   
   if (!client.connect(HUB_IP, HUB_PORT)) {
-    Serial.println("[ERROR] Connection to hub failed");
-    blinkLED(LED_STATUS, 3, 100);
+    Serial.println("[INFO] Hub unreachable - event logged locally only");
     return;
   }
   
@@ -214,15 +235,6 @@ void sendEventToHub(const char* event, const char* melody, int duration) {
   
   Serial.print("[OK] Event sent: ");
   Serial.println(jsonString);
-}
-
-void blinkLED(int pin, int times, int delayMs) {
-  for (int i = 0; i < times; i++) {
-    digitalWrite(pin, HIGH);
-    delay(delayMs);
-    digitalWrite(pin, LOW);
-    delay(delayMs);
-  }
 }
 
 int readBattery() {
